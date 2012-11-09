@@ -1,3 +1,5 @@
+# Copyright (c) 2012, Mitchell Cooper
+
 use warnings;
 use strict;
 use utf8;
