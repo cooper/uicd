@@ -24,7 +24,7 @@ BEGIN {
     }
 
     chdir $run_dir or die "Can't access run directory.\n";
-    unshift @INC, "$run_dir/lib";
+    unshift @INC, "$run_dir/lib", "$run_dir/libuic";
 
     require UICd;
     UICd::begin();
