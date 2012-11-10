@@ -13,6 +13,8 @@ use strict;
 use utf8;
 use parent 'UIC::EventedObject';
 
+use UICd::Utils 'trim';
+
 # create a new configuration instance.
 sub new {
     my ($class, $hashref, $filename) = @_;
@@ -30,26 +32,26 @@ sub parse_config {
     while (my $line = <$config>) {
 
         $i++;
-        $line = UICd::Utils::trim($line);
+        $line = trim($line);
         next unless $line;
         next if $line =~ m/^#/;
 
         # a block with a name.
         if ($line =~ m/^\[(.*?):(.*)\]$/) {
-            $block = UICd::Utils::trim($1);
-            $name  = UICd::Utils::trim($2);
+            $block = trim($1);
+            $name  = trim($2);
         }
 
         # a nameless block.
         elsif ($line =~ m/^\[(.*)\]$/) {
             $block = 'section';
-            $name  = UICd::Utils::trim($1);
+            $name  = trim($1);
         }
 
         # a key and value.
         elsif ($line =~ m/^(\s*)(\w*)=(.*)$/ && defined $block) {
-            $key = UICd::Utils::trim($2);
-            $val = eval UICd::Utils::trim($3);
+            $key = trim($2);
+            $val = eval trim($3);
             die "Invalid value in $$conf{filename} line $i: $@\n" if $@;
             
             # the value has changed, so send the event.

@@ -5,12 +5,13 @@ package UICd::Utils;
 use warnings;
 use strict;
 use utf8;
+use feature 'switch';
 
 # import/export.
 sub import {
     my $package = caller;
     no strict 'refs';
-    *{$package.'::'.$_} = *{__PACKAGE__.'::'.$_} foreach @_[1..$#_]
+    *{$package.'::'.$_} = *{__PACKAGE__.'::'.$_} foreach @_[1..$#_];
 }
 
 # GV
