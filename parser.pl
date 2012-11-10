@@ -57,6 +57,13 @@ sub parse_line {
             # if there is no command, something surely has gone wrong. ex: [] or [:]
             if (!defined $current{command_name}) {
                 # illegal error. disconnect.
+                return;
+            }
+        
+            # if there is a parameter name, we have a problem.
+            if (defined $current{parameter_name}) {
+                # illegal error. disconnect.
+                return;
             }
         
             # there might not be any parameters. at this point, the command may be done.
@@ -108,6 +115,16 @@ sub parse_line {
                         delete $current{parameter_value};
                         
                     }
+                    
+                    # exclamation mark - indicates a boolean parameter. ex: [someCommand: someParameter(some value) someBool!]
+                    elsif ($char eq '!' && !$current{parameter_escape} && !$current{inside_parameter}) {
+                        
+                        # set value to a true value (1).
+                        $final{parameters}{$current{parameter_name}} = 1;
+                        delete $current{parameter_name};
+                        
+                    }
+                    
                     
                     # actual characters of the parameter name or value.
                     else {
@@ -170,7 +187,7 @@ sub parse_line {
 }
 
 #my $string = '[hello: network(uicnet) id(4) name(server1.uic.notroll.net) description(uicnet server \(the best server\)) software(uicd) version(0.1) uicVersion(1)]';
-my $string = '[command: parameter(value) otherParameter(other value) somethingElse(they can have \(parenthesis\) in them.)]';
+my $string = '[command: parameter(value) otherParameter(other value) somethingElse(they can have \(parenthesis\) in them.) someBool!]';
 
 print Dumper parse_line($string);
 
