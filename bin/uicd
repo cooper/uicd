@@ -3,6 +3,7 @@
 
 use warnings;
 use strict;
+use utf8;
 
 local ($0,     $SIG{TERM},        $SIG{KILL},        $SIG{PIPE}        ) =
       ('uicd', \&UICd::terminate, \&UICd::terminate, \&UICd::signalpipe);
@@ -10,6 +11,8 @@ local ($SIG{HUP},         $SIG{__WARN__}                               ) =
       (\&UICd::signalhup, \&UICd::WARNING                              );
 
 our ($run_dir, $loop);
+
+sub reloadable (&&);
 
 BEGIN {
 

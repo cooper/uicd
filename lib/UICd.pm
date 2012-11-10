@@ -1,11 +1,15 @@
 # Copyright (c) 2012, Mitchell Cooper
+# UICd: reprents a server instance.
+# inherits from UIC, which represents a UIC object
+# (manages users, servers, channels, and more.)
 package UICd;
 
 use warnings;
 use strict;
+use utf8;
 use feature qw(switch say);
 
-our ($VERSION, %GV) = 1;
+our ($VERSION, @ISA, %GV) = 1;
 
 # BEGIN block.
 sub begin {
@@ -25,8 +29,13 @@ sub boot {
     require IO::Async::Listener;
     require IO::Async::Timer::Periodic;
     require IO::Socket::IP;
+    require UIC;
+    
+    unshift @ISA, 'UIC';
 
     $main::loop = IO::Async::Loop->new;
+    
+    *main::reloable = *reloadable;
 
     start();
     become_daemon();
@@ -79,6 +88,9 @@ sub signalpipe {
 
 # handle a warning.
 sub WARNING {
+}
+
+sub reloadable {
 }
 
 1

@@ -2,6 +2,10 @@
 # utils: commonly used utilities and conveniences.
 package UICd::Utils;
 
+use warnings;
+use strict;
+use utf8;
+
 # GV
 sub gv {
     # can't use do{given{ ... }}
