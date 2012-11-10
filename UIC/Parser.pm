@@ -1,4 +1,5 @@
 # Copyright (c) 2012, Mitchell Cooper
+package UIC::Parser;
 
 use warnings;
 use strict;
@@ -186,7 +187,6 @@ sub parse_line {
     return \%final;
 }
 
-#my $string = '[hello: network(uicnet) id(4) name(server1.uic.notroll.net) description(uicnet server \(the best server\)) software(uicd) version(0.1) uicVersion(1)]';
 my $string = '[command: parameter(value) otherParameter(other value) somethingElse(they can have \(parenthesis\) in them.) someBool!]';
 
 print Dumper parse_line($string);
