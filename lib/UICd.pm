@@ -1,6 +1,6 @@
 # Copyright (c) 2012, Mitchell Cooper
 # UICd: reprents a server instance.
-# inherits from UIC, which represents a UIC object
+# inherits from UIC, which represents a UIC object.
 # (manages users, servers, channels, and more.)
 package UICd;
 
@@ -9,7 +9,7 @@ use strict;
 use utf8;
 use feature qw(switch say);
 
-our ($VERSION, @ISA, %GV) = 1;
+our ($VERSION, @ISA, %GV, $conf) = 1;
 
 # BEGIN block.
 sub begin {
@@ -24,17 +24,35 @@ sub begin {
 
 # load requirements and set up the loop.
 sub boot {
+
+    # base requirements.
     require POSIX;
+    
+    # IO::Async and friends.
     require IO::Async::Loop;
     require IO::Async::Listener;
     require IO::Async::Timer::Periodic;
     require IO::Socket::IP;
+
+    # libuic and UICd.
     require UIC;
+    require UICd::Configuration;
+    require UICd::Connection;
+    require UICd::Server;
+    require UICd::User;
+    require UICd::Channel;
     
+    # load the configuration.
+    $conf = UICd::Configuration->new(\%main::conf, "$main::run_dir/etc/uicd.conf");
+    $conf->parse_config or die "Can't parse uicd.conf: $!\n";
+    
+    # become a child of UIC.
     unshift @ISA, 'UIC';
 
+    # create the IO::Async loop.
     $main::loop = IO::Async::Loop->new;
     
+    # replace reloadable().
     *main::reloable = *reloadable;
 
     start();

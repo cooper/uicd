@@ -10,7 +10,7 @@ local ($0,     $SIG{TERM},        $SIG{KILL},        $SIG{PIPE}        ) =
 local ($SIG{HUP},         $SIG{__WARN__}                               ) =
       (\&UICd::signalhup, \&UICd::WARNING                              );
 
-our ($run_dir, $loop);
+our ($run_dir, $loop, %conf);
 
 sub reloadable (&&);
 

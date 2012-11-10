@@ -15,7 +15,15 @@ sub gv {
         when (2) { return $UICd::GV{+shift}{+shift}         }
         when (3) { return $UICd::GV{+shift}{+shift}{+shift} }
     }
-    return
+    return;
+}
+
+# remove leading and trailing whitespace.
+sub trim {
+    my $string = shift;
+    $string =~ s/\s+$//;
+    $string =~ s/^\s+//;
+    return $string;
 }
 
 1
