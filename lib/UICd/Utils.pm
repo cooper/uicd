@@ -6,6 +6,13 @@ use warnings;
 use strict;
 use utf8;
 
+# import/export.
+sub import {
+    my $package = caller;
+    no strict 'refs';
+    *{$package.'::'.$_} = *{__PACKAGE__.'::'.$_} foreach @_[1..$#_]
+}
+
 # GV
 sub gv {
     # can't use do{given{ ... }}
