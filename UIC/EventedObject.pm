@@ -1,6 +1,6 @@
 # Copyright (c) 2012, Mitchell Cooper
 #
-# UIC::EventedObject:
+# The libuic UIC::EventedObject:
 # event system based on EventedObject from foxy-java IRC Bot,
 # ... which is based on EventedObject from Arinity IRC Services,
 # ... which is based on EventedObject from ntirc IRC Client,
@@ -11,6 +11,7 @@ package UIC::EventedObject;
  
 use warnings;
 use strict;
+use utf8;
  
 # create a new evented object
 sub new {
@@ -78,9 +79,7 @@ sub delete_event {
 }
  
 # aliases
-sub on;
-sub del;
-sub fire;
+sub on; sub del; sub fire;
 *on   = *attach_event;
 *del  = *delete_event;
 *fire = *fire_event;
