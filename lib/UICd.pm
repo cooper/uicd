@@ -43,8 +43,8 @@ sub boot {
     require UICd::Channel;
     
     # load the configuration.
-    $conf = UICd::Configuration->new(\%main::conf, "$main::run_dir/etc/uicd.conf");
-    $conf->parse_config or die "Can't parse uicd.conf: $!\n";
+    $conf = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
+    $conf->parse_config or die "Can't parse $main::dir{etc}/uicd.conf: $!\n";
     
     # become a child of UIC.
     unshift @ISA, 'UIC';
@@ -76,10 +76,10 @@ sub become_daemon {
         open STDERR, '>', '/dev/null' or die;
 
         # write the PID file that is used by the start/stop/rehash script.
-        open my $pidfh, '>', "$main::run_dir/etc/$GV{NAME}.pid" or die;
+        open my $pidfh, '>', "$main::dir{run}/$GV{NAME}.pid" or die;
         $GV{PID} = fork;
         say $pidfh $GV{PID} if $GV{PID};
-        close $pidfh
+        close $pidfh;
     }
 
     exit if $GV{PID};

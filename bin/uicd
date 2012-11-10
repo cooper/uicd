@@ -10,7 +10,7 @@ local ($0,     $SIG{TERM},        $SIG{KILL},        $SIG{PIPE}        ) =
 local ($SIG{HUP},         $SIG{__WARN__}                               ) =
       (\&UICd::signalhup, \&UICd::WARNING                              );
 
-our ($run_dir, $loop, %conf);
+our ($run_dir, %dir, $loop, %conf);
 
 sub reloadable (&&);
 
@@ -26,8 +26,14 @@ BEGIN {
         die "Run directory does not exist.\n";
     }
 
+    $dir{etc} = "$run_dir/etc";
+    $dir{bin} = "$run_dir/bin";
+    $dir{lib} = "$run_dir/lib";
+    $dir{run} = "$run_dir/etc";
+    $dir{libuic} = "$run_dir/libuic";
+
     chdir $run_dir or die "Can't access run directory.\n";
-    unshift @INC, "$run_dir/lib", "$run_dir/libuic";
+    unshift @INC, $dir{lib}, $dir{libuic};
 
     require UICd;
     UICd::begin();
