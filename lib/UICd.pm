@@ -153,6 +153,58 @@ sub WARNING {
 sub reloadable {
 }
 
+###########################
+### IO::ASYNC CALLBACKS ###
+###########################
+
+# handle a new connection.
+sub handle_connect {
+    my ($listener, $stream) = @_;
+
+    # if the connection limit has been reached, disconnect
+    #if (scalar keys %connection::connection >= conf('limit', 'connection')) {
+    #    $stream->close_now;
+    #    return
+    #}
+
+    # if the connection IP limit has been reached, disconnect
+    #my $ip = $stream->{write_handle}->peerhost;
+    #if (scalar(grep { $_->{ip} eq $ip } values %connection::connection) >= conf('limit', 'perip')) {
+    #    $stream->close_now;
+    #    return
+    #}
+
+    # if the global user IP limit has been reached, disconnect
+    #if (scalar(grep { $_->{ip} eq $ip } values %user::user) >= conf('limit', 'globalperip')) {
+    #    $stream->close_now;
+    #    return
+    #}
+
+    # create connection object
+    my $conn = $main::UICd->new_connection($stream);
+
+    $stream->configure(
+        read_all       => 0,
+        read_len       => POSIX::BUFSIZ(),
+        on_read        => \&handle_data,
+        on_read_eof    => sub { },#$conn->done('connection closed'); $stream->close_now   },
+        on_write_eof   => sub { },#$conn->done('connection closed'); $stream->close_now   },
+        on_read_error  => sub { },#$conn->done('read error: ' .$_[1]); $stream->close_now },
+        on_write_error => sub { }#$conn->done('write error: '.$_[1]); $stream->close_now }
+    );
+
+    $main::loop->add($stream);
+}
+
+# handle incoming data.
+sub handle_data {
+    my ($stream, $buffer) = @_;
+    #my $connection = connection::lookup_by_stream($stream);
+    #while ($$buffer =~ s/^(.*?)\n//) {
+    #    $connection->handle($1)
+    #}
+}
+
 ############################
 ### MANAGING CONNECTIONS ###
 ############################
