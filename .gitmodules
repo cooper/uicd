@@ -1,0 +1,3 @@
+[submodule "libuic"]
+	path = libuic
+	url = git://github.com/cooper/libuic.git
