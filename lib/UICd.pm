@@ -8,6 +8,8 @@ use warnings;
 use strict;
 use utf8;
 
+use UICd::Utils qw(log2 fatal);
+
 our ($VERSION, @ISA, %GV, $conf) = 1;
 
 # BEGIN block.
@@ -40,6 +42,7 @@ sub boot {
     require IO::Async::Loop;
     require IO::Async::Listener;
     require IO::Async::Timer::Periodic;
+    require IO::Async::Stream;
     require IO::Socket::IP;
 
     # libuic and UICd.
@@ -51,7 +54,7 @@ sub boot {
     require UICd::Channel;
     
     # load the configuration.
-    $conf = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
+    $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
     $conf->parse_config or die "Can't parse $main::dir{etc}/uicd.conf: $!\n";
     
     # become a child of UIC.
@@ -69,6 +72,37 @@ sub boot {
 
 # set up server.
 sub start {
+
+    # create the sockets and begin listening.
+    create_sockets();
+    
+}
+
+# create the sockets and begin listening.
+sub create_sockets {
+    foreach my $addr ($conf->names_of_block('listen')) {
+      foreach my $port (@{$conf->get(['listen', $addr], 'port')}) {
+
+        # create the loop listener
+        my $listener = IO::Async::Listener->new(on_stream => \&handle_connect);
+        $main::loop->add($listener);
+
+        # create the socket
+        my $socket = IO::Socket::IP->new(
+            LocalAddr => $addr,
+            LocalPort => $port,
+            Listen    => 1,
+            ReuseAddr => 1,
+            Type      => Socket::SOCK_STREAM(),
+            Proto     => 'tcp'
+        ) or fatal("Couldn't listen on [$addr]:$port: $!");
+
+        # add to looped listener
+        $listener->listen(handle => $socket);
+
+        log2("Listening on [$addr]:$port");
+    } }
+    return 1
 }
 
 # become a daemon.

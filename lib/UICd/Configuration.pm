@@ -49,9 +49,9 @@ sub parse_config {
         }
 
         # a key and value.
-        elsif ($line =~ m/^(\s*)(\w*)=(.*)$/ && defined $block) {
+        elsif ($line =~ m/^(\s*)(\w*)(\s*)=(.*)$/ && defined $block) {
             $key = trim($2);
-            $val = eval trim($3);
+            $val = eval trim($4);
             die "Invalid value in $$conf{filename} line $i: $@\n" if $@;
             
             # the value has changed, so send the event.
@@ -73,5 +73,22 @@ sub parse_config {
     return 1;
 }
 
+# returns a list of all the names of a block type.
+# for example, names_of_block('listen') might return ('0.0.0.0', '127.0.0.1')
+sub names_of_block {
+    my ($conf, $blocktype) = @_;
+    return keys %{$conf->{conf}{$blocktype}};
+}
+
+# get a configuration value.
+# supports unnamed blocks by get(block, key)
+# supports   named blocks by get([block type, block name], key)
+sub get {
+    my ($conf, $block, $key) = @_;
+    if (defined ref $block && ref $block eq 'ARRAY') {
+        return $conf->{conf}{$block->[0]}{$block->[1]}{$key};
+    }
+    return $conf->{conf}{section}{$block}{$key};
+}
 
 1

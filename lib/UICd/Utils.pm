@@ -5,7 +5,7 @@ package UICd::Utils;
 use warnings;
 use strict;
 use utf8;
-use feature 'switch';
+use feature qw(switch say);
 
 # import/export.
 sub import {
@@ -32,6 +32,22 @@ sub trim {
     $string =~ s/\s+$//;
     $string =~ s/^\s+//;
     return $string;
+}
+
+# log errors/warnings.
+sub log2 {
+    return if !$main::NOFORK  && defined $main::PID;
+    my $line = shift;
+    my $sub = (caller 1)[3];
+    say(time.q( ).($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line)
+}
+
+# log and exit. a third argument exits with no error.
+sub fatal {
+    my $line = shift;
+    my $sub = (caller 1)[3];
+    log2(($sub ? "$sub(): " : q..).$line);
+    exit(shift() ? 0 : 1)
 }
 
 1
