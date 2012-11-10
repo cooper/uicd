@@ -161,26 +161,26 @@ sub reloadable {
 sub handle_connect {
     my ($listener, $stream) = @_;
 
-    # if the connection limit has been reached, disconnect
-    #if (scalar keys %connection::connection >= conf('limit', 'connection')) {
+    # if the connection limit has been reached, drop the connection.
+    if ($main::UICd->number_of_connections >= $conf->get('limit', 'total_local_connections')) {
+        $stream->close_now;
+        return;
+    }
+
+    # if the connection IP limit has been reached, drop the connection.
+    my $ip = $stream->{write_handle}->peerhost;
+    if (scalar(grep { $_->{ip} eq $ip } $main::UICd->connections) >= $conf->get('limit', 'local_connections_per_ip')) {
+        $stream->close_now;
+        return;
+    }
+
+    # if the global IP limit has been reached, drop the connection.
+    #if (scalar(grep { $_->{ip} eq $ip } values %user::user) >= conf('limit', 'global_connections_per_ip')) {
     #    $stream->close_now;
-    #    return
+    #    return;
     #}
 
-    # if the connection IP limit has been reached, disconnect
-    #my $ip = $stream->{write_handle}->peerhost;
-    #if (scalar(grep { $_->{ip} eq $ip } values %connection::connection) >= conf('limit', 'perip')) {
-    #    $stream->close_now;
-    #    return
-    #}
-
-    # if the global user IP limit has been reached, disconnect
-    #if (scalar(grep { $_->{ip} eq $ip } values %user::user) >= conf('limit', 'globalperip')) {
-    #    $stream->close_now;
-    #    return
-    #}
-
-    # create connection object
+    # create connection object.
     my $conn = $main::UICd->new_connection($stream);
 
     $stream->configure(
@@ -238,6 +238,12 @@ sub set_connection_for_stream {
 sub number_of_connections {
     my $uicd = shift;
     return scalar keys %{$uicd->{connections}};
+}
+
+# returns a list of active connections.
+sub connections {
+    my $uicd = shift;
+    return values %{$uicd->{connections}};
 }
 
 1
