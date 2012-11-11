@@ -12,6 +12,10 @@ use UICd::Utils qw(log2 fatal gv set);
 
 our ($VERSION, @ISA, %GV, $conf) = 1;
 
+##############################
+### CALLED BY MAIN PACKAGE ###
+##############################
+
 # BEGIN block.
 sub begin {
     %GV = (
@@ -138,6 +142,17 @@ sub loop {
     $main::loop->loop_forever;
 }
 
+##########################
+### PACKAGE MANAGEMENT ###
+##########################
+
+sub reloadable {
+}
+
+########################
+### HANDLING SIGNALS ###
+########################
+
 # stop the uicd.
 sub terminate {
 
@@ -153,9 +168,6 @@ sub signalpipe {
 
 # handle a warning.
 sub WARNING {
-}
-
-sub reloadable {
 }
 
 ###########################
@@ -204,10 +216,9 @@ sub handle_connect {
 # handle incoming data.
 sub handle_data {
     my ($stream, $buffer) = @_;
-    log2("$$buffer");
-    #my $connection = connection::lookup_by_stream($stream);
+    my $connection = $main::UICd->lookup_connection_by_stream($stream);
     while ($$buffer =~ s/^(.*?)\n//) {
-    #    $connection->handle($1)
+        $connection->handle($1);
     }
 }
 
@@ -272,5 +283,17 @@ sub close_connection {
     $connection->done($reason, $silent);
     $uicd->remove_connection($connection);
 }
+
+#####################
+### UIC OVERRIDES ###
+#####################
+
+# parse a line of data.
+# this overrides UIC::parse_data().
+sub parse_data {
+    my ($uic, $data) = @_;
+    log2("parsing data: $data");
+}
+
 
 1

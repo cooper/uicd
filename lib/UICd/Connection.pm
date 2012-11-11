@@ -6,6 +6,7 @@ package UICd::Connection;
 use warnings;
 use strict;
 use utf8;
+use feature 'switch';
 use parent 'UIC::EventedObject';
 
 use UICd::Utils qw(gv set log2 fatal);
@@ -18,10 +19,9 @@ sub new {
     bless my $connection = {
         stream        => $stream,
         ip            => $stream->{write_handle}->peerhost,
-        source        => gv('SERVER', 'sid'),
         connect_time  => time,
-        #last_ping     => time,
-        #last_response => time
+        last_ping     => time,
+        last_response => time
     }, $class;
 
     # eventually hostnames will be resolved here.
@@ -46,13 +46,35 @@ sub done {
 
     $connection->{stream}->close_when_empty;
 
-
+    $connection->{goodbye} = 1;
     #delete $connection->{type}->{conn};
     #delete $connection->{type};
 
     return 1
 
 }
+
+sub handle {
+    my ($connection, $data) = @_;
+
+    $connection->{ping_in_air}   = 0;
+    $connection->{last_response} = time;
+
+    # strip unwanted characters.
+    $data =~ s/(\n|\r|\0)//g;
+
+    # connection is being closed
+    return if $connection->{goodbye};
+
+    # parse the line.
+    $main::UICd->parse_data($data);
+
+    # if this peer is registered, forward the data to server or user
+    #return $connection->{type}->handle($data) if $connection->{ready};
+
+
+}
+
 
 sub DESTROY {
     my $conn = shift;
