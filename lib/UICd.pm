@@ -75,6 +75,18 @@ sub boot {
     # replace reloadable().
     *main::reloable = *reloadable;
 
+## TEMPORARY TEST. XXX XXX XXX XXX XXX XXX
+# register a command handler.
+ $main::UICd->register_handler('connection.someCommand', {
+     someParameter => 'number',  # an integer or decimal
+     someOther     => 'string',  # a plain old string
+     anotherParam  => 'user',    # a user ID
+     evenMoreParam => 'server',  # a server ID
+     yetAnother    => 'channel', # a channel ID
+     evenAnother   => 'bool'
+ }, sub { log2("@_") }, 200);
+# returns a handler identifier.
+
     start();
     become_daemon();
 }
@@ -291,9 +303,16 @@ sub close_connection {
 # parse a line of data.
 # this overrides UIC::parse_data().
 sub parse_data {
-    my ($uic, $data) = @_;
+    my ($uicd, $data) = @_;
     log2("parsing data: $data");
+    
+    my $result = UIC::Parser::parse_line($data);
+    if (!$result) {
+        log2("error parsing data: $@");
+        return;
+    }
+    
+    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters});
 }
-
 
 1
