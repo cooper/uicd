@@ -306,13 +306,17 @@ sub parse_data {
     my $json_error;
     if (!$result && $conf->get('enable', 'JSON')) {
         require JSON if !$INC{'JSON'};
-        $result = eval { JSON::decode_json($data); die "$@\n" if $@ };
+        
+        # attempt to parse the JSON. must be wrapped in eval to catch errors.
+        $result = eval { my $j = JSON::decode_json($data); die "$@\n" if $@; $j };
+        
+        # figure the error if there is one.
         $json_error = $@ if $@ ne $uic_error;
         $json_error =~ s/\n//g if $json_error;
         
         # convert to proper values.
         $result = UIC::Parser::decode_json($result) if $result;
-
+        
     }
     
     # unable to parse data - drop the connection.
