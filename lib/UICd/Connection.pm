@@ -67,7 +67,7 @@ sub handle {
     return if $connection->{goodbye};
 
     # parse the line.
-    $main::UICd->parse_data($data);
+    $main::UICd->parse_data($data, $connection);
 
     # if this peer is registered, forward the data to server or user
     #return $connection->{type}->handle($data) if $connection->{ready};

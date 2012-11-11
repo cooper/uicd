@@ -37,6 +37,7 @@ sub begin {
 }
 
 # load requirements and set up the loop.
+# keep in mind that this may be called more than once.
 sub boot {
 
     # base requirements.
@@ -58,9 +59,9 @@ sub boot {
     require UICd::Channel;
     
     # become a child of UIC.
-    unshift @ISA, 'UIC';
+    unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
     
-    # load the configuration.
+    # load the configuration. we can do this as many times as we please.
     $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
     $conf->parse_config or die "Can't parse $main::dir{etc}/uicd.conf: $!\n";
     
@@ -70,28 +71,19 @@ sub boot {
     }
     
     # create the IO::Async loop.
-    $main::loop = IO::Async::Loop->new;
+    $main::loop = IO::Async::Loop->new unless $main::loop;
     
     # replace reloadable().
     *main::reloable = *reloadable;
 
-## TEMPORARY TEST. XXX XXX XXX XXX XXX XXX
-# register a command handler.
- $main::UICd->register_handler('connection.someCommand', {
-     someParameter => 'number',  # an integer or decimal
-     someOther     => 'string',  # a plain old string
-     anotherParam  => 'user',    # a user ID
-     evenMoreParam => 'server',  # a server ID
-     yetAnother    => 'channel', # a channel ID
-     evenAnother   => 'bool'
- }, sub { log2("@_") }, 200);
-# returns a handler identifier.
-
-    start();
-    become_daemon();
+    if (!$GV{started}) {
+        start();
+        become_daemon();
+        $GV{started} = 1;
+    }
 }
 
-# set up server.
+# set up server. only called during initial start.
 sub start {
 
     # create the sockets and begin listening.
@@ -99,7 +91,7 @@ sub start {
     
 }
 
-# create the sockets and begin listening.
+# create the sockets and begin listening. only called during initial start.
 sub create_sockets {
     foreach my $addr ($conf->names_of_block('listen')) {
       foreach my $port (@{$conf->get(['listen', $addr], 'port')}) {
@@ -267,7 +259,6 @@ sub set_connection_for_stream {
 sub remove_connection {
     my ($uicd, $connection) = @_;
     delete $uicd->{connections}{$connection->{stream}};
-    log2("scalar \%connections: ".scalar(keys %{$uicd->{connections}}));
 }
 
 # number of current connections.
@@ -303,12 +294,24 @@ sub close_connection {
 # parse a line of data.
 # this overrides UIC::parse_data().
 sub parse_data {
-    my ($uicd, $data) = @_;
+    my ($uicd, $data, $connection) = @_;
     log2("parsing data: $data");
     
     my $result = UIC::Parser::parse_line($data);
+    
+    # unable to parse data - drop the connection.
     if (!$result) {
         log2("error parsing data: $@");
+        
+        # forcibly send an error immediately.
+        my $error = UIC::Parser::encode(
+            command_name => 'error',
+            parameters   => { message => "Syntax error: $@" }
+        );
+        $connection->{stream}->write($error."\n");
+        
+        # close the connection.
+        $uicd->close_connection($connection, "Syntax error: $@");
         return;
     }
     
