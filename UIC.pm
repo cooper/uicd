@@ -13,7 +13,7 @@ use UIC::Server;
 use UIC::User;
 use UIC::Channel;
 
-use Scalar::Util;
+use Scalar::Util 'looks_like_number';
 
 sub parse_data {
     my ($uic, $data) = @_;
@@ -34,7 +34,7 @@ sub register_handler {
     $priority ||= 0;
     
     # make sure callback is CODE and parameters is HASH.
-    return if !ref $callback || ref $callback ne 'CODE';
+    return if !ref $callback   || ref $callback ne 'CODE';
     return if !ref $parameters || ref $parameters ne 'HASH';
     
     # make sure the types are valid.
@@ -97,7 +97,7 @@ sub interpret_string_as {
             return $string.q();
         }
         when ('number') {
-            if (Scalar::Util::looks_like_number($string)) {
+            if (looks_like_number($string)) {
                 return $string + 0;
             }
             return 1;
