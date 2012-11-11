@@ -8,7 +8,7 @@ use warnings;
 use strict;
 use utf8;
 
-use UICd::Utils qw(log2 fatal);
+use UICd::Utils qw(log2 fatal gv set);
 
 our ($VERSION, @ISA, %GV, $conf) = 1;
 
@@ -53,13 +53,18 @@ sub boot {
     require UICd::User;
     require UICd::Channel;
     
+    # become a child of UIC.
+    unshift @ISA, 'UIC';
+    
     # load the configuration.
     $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
     $conf->parse_config or die "Can't parse $main::dir{etc}/uicd.conf: $!\n";
     
-    # become a child of UIC.
-    unshift @ISA, 'UIC';
-
+    # create the main UICd object.
+    if (!$main::UICd) {
+        $main::UICd = $GV{UICd} = __PACKAGE__->new();
+    }
+    
     # create the IO::Async loop.
     $main::loop = IO::Async::Loop->new;
     
@@ -187,10 +192,10 @@ sub handle_connect {
         read_all       => 0,
         read_len       => POSIX::BUFSIZ(),
         on_read        => \&handle_data,
-        on_read_eof    => sub { },#$conn->done('connection closed'); $stream->close_now   },
-        on_write_eof   => sub { },#$conn->done('connection closed'); $stream->close_now   },
-        on_read_error  => sub { },#$conn->done('read error: ' .$_[1]); $stream->close_now },
-        on_write_error => sub { }#$conn->done('write error: '.$_[1]); $stream->close_now }
+        on_read_eof    => sub { $main::UICd->close_connection($conn, 'Connection closed'); $stream->close_now   },
+        on_write_eof   => sub { $main::UICd->close_connection($conn, 'Connection closed'); $stream->close_now   },
+        on_read_error  => sub { $main::UICd->close_connection($conn, 'Read error: ' .$_[1]); $stream->close_now },
+        on_write_error => sub { $main::UICd->close_connection($conn, 'Write error: '.$_[1]); $stream->close_now }
     );
 
     $main::loop->add($stream);
@@ -199,10 +204,11 @@ sub handle_connect {
 # handle incoming data.
 sub handle_data {
     my ($stream, $buffer) = @_;
+    log2("$$buffer");
     #my $connection = connection::lookup_by_stream($stream);
-    #while ($$buffer =~ s/^(.*?)\n//) {
+    while ($$buffer =~ s/^(.*?)\n//) {
     #    $connection->handle($1)
-    #}
+    }
 }
 
 ############################
@@ -212,7 +218,7 @@ sub handle_data {
 # create a connection and associate it with this UICd object.
 sub new_connection {
     my ($uicd, $stream) = @_;
-    my $connection = connection->new($stream);
+    my $connection = UICd::Connection->new($stream);
     $uicd->set_connection_for_stream($stream, $connection);
     
     # update total connection count
@@ -234,6 +240,13 @@ sub set_connection_for_stream {
     return $connection;
 }
 
+# dispose of a connection.
+sub remove_connection {
+    my ($uicd, $connection) = @_;
+    delete $uicd->{connections}{$connection->{stream}};
+    log2("scalar \%connections: ".scalar(keys %{$uicd->{connections}}));
+}
+
 # number of current connections.
 sub number_of_connections {
     my $uicd = shift;
@@ -244,6 +257,20 @@ sub number_of_connections {
 sub connections {
     my $uicd = shift;
     return values %{$uicd->{connections}};
+}
+
+# find a connection by its stream.
+sub lookup_connection_by_stream {
+    my ($uicd, $stream) = @_;
+    return $uicd->{connections}{$stream};
+}
+
+# end and delete a connection.
+sub close_connection {
+    my ($uicd, $connection, $reason, $silent) = @_;
+    log2("Closing connection from $$connection{ip}: $reason");
+    $connection->done($reason, $silent);
+    $uicd->remove_connection($connection);
 }
 
 1

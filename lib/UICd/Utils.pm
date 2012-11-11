@@ -26,6 +26,11 @@ sub gv {
     return;
 }
 
+# GV set
+sub set ($$) {
+    $UICd::GV{+shift} = shift;
+}
+
 # remove leading and trailing whitespace.
 sub trim {
     my $string = shift;
