@@ -6,7 +6,7 @@ use strict;
 use utf8;
 use feature 'switch';
 
-use Data::Dumper 'Dumper';
+use Scalar::Util 'looks_like_number';
 
 # %current
 #
@@ -187,7 +187,10 @@ sub parse_line {
     return \%final;
 }
 
-my $string = '[command: parameter(value) otherParameter(other value) somethingElse(they can have \(parenthesis\) in them.) someBool!]';
-
-print Dumper parse_line($string);
-
+sub numerical_value {
+    my $string = shift;
+    if (looks_like_number($string)) {
+        return $string + 0;
+    }
+    return 1;
+}
