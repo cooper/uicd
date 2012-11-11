@@ -15,6 +15,9 @@ use parent 'UIC::EventedObject';
 
 use UICd::Utils 'trim';
 
+sub on  { 1 }
+sub off { undef }
+
 # create a new configuration instance.
 sub new {
     my ($class, $hashref, $filename) = @_;

@@ -297,21 +297,35 @@ sub parse_data {
     my ($uicd, $data, $connection) = @_;
     log2("parsing data: $data");
     
-    my $result = UIC::Parser::parse_line($data);
+    # first attempt to parse data as UIC.
+    my $result    = UIC::Parser::parse_line($data);
+    my $uic_error = $@;
+    
+    # if JSON/UJC support is enabled, load JSON if not already loaded
+    # and attempt to parse the message as JSON.
+    my $json_error;
+    if (!$result && $conf->get('enable', 'JSON')) {
+        require JSON if !$INC{'JSON'};
+        $result = eval { JSON::decode_json($data); die "$@\n" if $@ };
+        $json_error = $@ if $@ ne $uic_error;
+        $json_error =~ s/\n//g if $json_error;
+        
+        # convert to proper values.
+        $result = UIC::Parser::decode_json($result) if $result;
+
+    }
     
     # unable to parse data - drop the connection.
     if (!$result) {
-        log2("error parsing data: $@");
-        
+
         # forcibly send an error immediately.
-        my $error = UIC::Parser::encode(
-            command_name => 'error',
-            parameters   => { message => "Syntax error: $@" }
-        );
-        $connection->{stream}->write($error."\n");
+        my $parameters = { uicError  => $uic_error };
+        $parameters->{jsonError} = $json_error if $json_error;
+        my $error = UIC::Parser::encode(command_name => 'syntaxError', parameters => $parameters);
+        $connection->{stream}->write("$error\n");
         
         # close the connection.
-        $uicd->close_connection($connection, "Syntax error: $@");
+        $uicd->close_connection($connection, "Syntax error");
         return;
     }
     
