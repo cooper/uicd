@@ -6,7 +6,6 @@ use strict;
 use utf8;
 use feature 'switch';
 
-use Scalar::Util 'looks_like_number';
 
 # %current
 #
@@ -187,10 +186,4 @@ sub parse_line {
     return \%final;
 }
 
-sub numerical_value {
-    my $string = shift;
-    if (looks_like_number($string)) {
-        return $string + 0;
-    }
-    return 1;
-}
+1

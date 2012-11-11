@@ -26,7 +26,8 @@ sub parse_data {
 #     someOther     => 'string',  # a plain old string
 #     anotherParam  => 'user',    # a user ID
 #     evenMoreParam => 'server',  # a server ID
-#     yetAnother    => 'channel'  # a channel ID
+#     yetAnother    => 'channel', # a channel ID
+#     evenAnother   => 'bool'
 # }, \&myHandler, 200);
 # returns a handler identifier.
 sub register_handler {
@@ -52,7 +53,7 @@ sub register_handler {
         priority   => $priority
     };
     
-    return defined $uic->{handlerID} ? ++$uic->{handlerID} : $uic->{handlerID} = 0;
+    return defined $uic->{handlerID} ? ++$uic->{handlerID} : ($uic->{handlerID} = 0);
 }
 
 # fire a command's handlers.
@@ -90,24 +91,41 @@ sub fire_handler {
     }}
 }
 
+# UIC type conversions. true hackery.
 sub interpret_string_as {
     my ($uic, $type, $string) = @_;
     given ($type) {
+
+        # string - append an empty string.
         when ('string') {
             return $string.q();
         }
+        
+        # number - add a zero.
         when ('number') {
             if (looks_like_number($string)) {
                 return $string + 0;
             }
             return 1;
         }
+        
+        # bool - double opposite.
+        when ('bool') {
+            return !!$string;
+        }
+        
+        # user - lookup a user object.
         when ('user') {
         }
+        
+        # channel - lookup a channel object.
         when ('channel') {
         }
+        
+        # server - lookup a server object.
         when ('server') {
         }
+        
     }
     return;
 }
