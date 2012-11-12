@@ -11,7 +11,7 @@ use UICd::Utils qw(conf log2 gv set);
 
 use Scalar::Util 'blessed';
 
-# load modules in the configuration
+# load modules in the configuration.
 sub load_config {
     log2('Loading configuration modules');
     foreach my $module ($UICd::conf->keys_of_block('modules')) {
@@ -20,6 +20,7 @@ sub load_config {
     log2('Done loading modules');
 }
 
+# load a module.
 sub load_module {
     my $name = shift;
 
@@ -70,6 +71,7 @@ sub load_module {
     return 1
 }
 
+# unload a module.
 sub unload_module {
     my ($name, $file) = @_;
 
@@ -104,6 +106,7 @@ sub unload_module {
     return 1
 }
 
+# load all of the API::Base requirements for a module.
 sub load_requirements {
     my $mod = shift;
     return unless $mod->{requires};
@@ -114,6 +117,7 @@ sub load_requirements {
     return 1
 }
 
+# attempt to load an API::Base.
 sub load_base {
     my $base = shift;
     return 1 if $INC{"API/Base/$base.pm"}; # already loaded
@@ -123,11 +127,13 @@ sub load_base {
     return 1;
 }
 
+# call ->unload for each API::Base.
 sub call_unloads {
     my $module = shift;
     $_->unload($module) foreach @API::Module::ISA;
 }
 
+# unload a class and its symbols.
 # from Class::Unload on CPAN.
 # copyright (c) 2011 by Dagfinn Ilmari MannsÃ¥ker.
 sub class_unload {

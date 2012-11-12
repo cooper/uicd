@@ -6,6 +6,8 @@ use strict;
 use utf8;
 use API::Module;
 
+use UICd::Utils 'log2';
+
 our $mod = API::Module->new(
     name        => 'Core::ConnectionCommands',
     version     => '0.7',
@@ -17,8 +19,10 @@ our $mod = API::Module->new(
 sub init {
 
     $mod->register_connection_command_handler(
-        command    => 'hello',
-        parameters => {
+        command     => 'hello',
+        description => 'register and authenticate a connection',
+        callback    => \&handle_hello,
+        parameters  => {
             name       => t_string,
             nickname   => t_string,
             software   => t_string,
@@ -28,6 +32,12 @@ sub init {
             server     => t_boolean
         }
     );
+
+}
+
+# hello command.
+# registers and authenticates a connection.
+sub handle_hello {
 
 }
 

@@ -44,7 +44,7 @@ sub log2 {
     return if !$main::NOFORK  && defined $main::PID;
     my $line = shift;
     my $sub = (caller 1)[3];
-    say(time.q( ).($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line)
+    say(time.q( ).($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
 }
 
 # log and exit. a third argument exits with no error.
@@ -52,7 +52,7 @@ sub fatal {
     my $line = shift;
     my $sub = (caller 1)[3];
     log2(($sub ? "$sub(): " : q..).$line);
-    exit(shift() ? 0 : 1)
+    exit(shift() ? 0 : 1);
 }
 
 # alias to $conf->get

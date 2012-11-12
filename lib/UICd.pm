@@ -297,6 +297,14 @@ sub close_connection {
 ### UIC OVERRIDES ###
 #####################
 
+# logging.
+# this overrides UIC::log().
+sub log {
+    my ($uicd, $message) = @_;
+    my $sub = (caller 1)[3];
+    log2("UICd: ".($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$message);
+}
+
 # parse a line of data.
 # this overrides UIC::parse_data().
 sub parse_data {
