@@ -37,7 +37,7 @@ sub load_module {
     }
 
     # load the module
-    log2("loading module $name");
+    log2("loading module '$name'");
     my $loc    = $name; $loc =~ s/::/\//g;
     my $file   = $main::dir{mod}.q(/).$loc.q(.pm);
     my $module = do $file or log2("couldn't load $file: ".($! ? $! : $@)) and return;
@@ -64,7 +64,7 @@ sub load_module {
     # initialize
     log2("$name: initializing module");
     eval { $module->{initialize}->() } or
-    log2($@ ? "module $name failed with error: $@" : "module '$name' refused to load") and return;
+    log2($@ ? "module '$name' failed with error: $@" : "module '$name' refused to load") and return;
 
     log2("uicd module '$name' loaded successfully");
     push @main::loaded_modules, $module;
@@ -119,7 +119,7 @@ sub load_requirements {
 
 # attempt to load an API::Base.
 sub load_base {
-    my $base = shift;
+    my $base = ucfirst shift;
     return 1 if $INC{"API/Base/$base.pm"}; # already loaded
     log2("loading base '$base'");
     do "$main::dir{lib}/API/Base/$base.pm" or log2("Could not load base '$base'") and return;
@@ -127,10 +127,10 @@ sub load_base {
     return 1;
 }
 
-# call ->unload for each API::Base.
+# call ->_unload for each API::Base.
 sub call_unloads {
     my $module = shift;
-    $_->unload($module) foreach @API::Module::ISA;
+    $_->_unload($module) foreach @API::Module::ISA;
 }
 
 # unload a class and its symbols.

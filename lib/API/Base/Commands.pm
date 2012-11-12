@@ -8,7 +8,13 @@ use UICd::Utils 'log2';
 
 # registers a connection command handler.
 sub register_connection_command_handler {
-    my ($mod, %opts) = @_;
+    return _register_handler('connection', shift, (caller)[0], @_);
+}
+
+# registers a handler of $type to $mod with %opts options.
+# not intended to be used directly - use one of the above methods instead.
+sub _register_handler {
+    my ($type, $mod, $caller, %opts) = @_;
 
     # make sure all required options are present.
     foreach my $what (qw|command description callback|) {
@@ -21,27 +27,29 @@ sub register_connection_command_handler {
     # register the handler to UICd.
     # unlike in juno-ircd, the low-level API checks for validity of types.
     my $handlerID = $main::UICd->register_handler(
-        "connection.$opts{command}",
+        "$type.$opts{command}",
         $opts{parameters},
         $opts{callback},
         $opts{priority} || 0,
-        (caller)[0]
+        $caller
     );
     
     # the UICd refused to accept this handler configuration.
     if (!defined $handlerID) {
-        log2("uicd refused to register handler for command '$opts{command}'");
+        log2("libuic refused to register handler for '$opts{command}' command");
         return;
     }
 
     # store the handler ID for later.    
     $mod->{connection_command_handlers} ||= [];
     push @{$mod->{connection_command_handlers}}, $handlerID;
+    
+    log2("module '$$mod{name}' registered handler for '$opts{command}' successfully");
     return 1;
 }
 
 # unload command handlers.
-sub unload {
+sub _unload {
     my ($class, $mod) = @_;
     log2("disposing of commands registered by uicd module '$$mod{name}'");
     # delete_handler...

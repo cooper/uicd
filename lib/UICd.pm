@@ -302,7 +302,7 @@ sub close_connection {
 sub log {
     my ($uicd, $message) = @_;
     my $sub = (caller 1)[3];
-    log2("UICd: ".($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$message);
+    log2("[libuic] ".($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$message);
 }
 
 # parse a line of data.
