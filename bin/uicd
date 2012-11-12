@@ -10,7 +10,14 @@ local ($0,     $SIG{TERM},        $SIG{KILL},        $SIG{PIPE}        ) =
 local ($SIG{HUP},         $SIG{__WARN__}                               ) =
       (\&UICd::signalhup, \&UICd::WARNING                              );
 
-our ($run_dir, %dir, $loop, %conf, $UICd);
+our (
+    $run_dir,           # the UICd running directory
+    %dir,               # a hash of data directories
+    $loop,              # the IO::Async loop
+    %conf,              # the UICd configuration values
+    $UICd,              # the UICd instance
+    @loaded_modules     # an array of loaded UICd modules
+);
 
 sub reloadable (&&);
 
@@ -30,6 +37,7 @@ BEGIN {
     $dir{bin} = "$run_dir/bin";
     $dir{lib} = "$run_dir/lib";
     $dir{run} = "$run_dir/etc";
+    $dir{mod} = "$run_dir/mod";
     $dir{libuic} = "$run_dir/libuic";
 
     chdir $run_dir or die "Can't access run directory.\n";

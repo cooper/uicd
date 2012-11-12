@@ -52,7 +52,7 @@ sub parse_config {
         }
 
         # a key and value.
-        elsif ($line =~ m/^(\s*)(\w*)(\s*)=(.*)$/ && defined $block) {
+        elsif ($line =~ m/^(\s*)([\w:]*)(\s*)=(.*)$/ && defined $block) {
             $key = trim($2);
             $val = eval trim($4);
             die "Invalid value in $$conf{filename} line $i: $@\n" if $@;
@@ -81,6 +81,17 @@ sub parse_config {
 sub names_of_block {
     my ($conf, $blocktype) = @_;
     return keys %{$conf->{conf}{$blocktype}};
+}
+
+# returns a list of all the keys in a block.
+# for example, keys_of_block('modules') would return an array of every module.
+# accepts block type or [block type, block name] as well.
+sub keys_of_block {
+    my ($conf, $block, $blocktype, $section) = (shift, shift);
+    $blocktype = (ref $block && ref $block eq 'ARRAY') ? $block->[0] : 'section';
+    $section   = (ref $block && ref $block eq 'ARRAY') ? $block->[1] : $block;
+    return my @a unless $conf->{conf}{$blocktype}{$section};
+    return keys %{$conf->{conf}{$blocktype}{$section}};
 }
 
 # get a configuration value.

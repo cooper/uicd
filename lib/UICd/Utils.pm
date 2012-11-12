@@ -55,4 +55,9 @@ sub fatal {
     exit(shift() ? 0 : 1)
 }
 
+# alias to $conf->get
+sub conf {
+    return $main::conf->get(@_);
+}
+
 1

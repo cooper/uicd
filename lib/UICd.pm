@@ -75,6 +75,12 @@ sub boot {
     
     # replace reloadable().
     *main::reloable = *reloadable;
+    
+    # load API modules.
+    if ($conf->get('enable', 'API')) {
+        require API;
+        API::load_config();
+    }
 
     if (!$GV{started}) {
         start();
