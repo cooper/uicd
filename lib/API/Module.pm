@@ -21,11 +21,11 @@ sub import {
 }
 
 # constants.
-sub t_boolean {  'bool'  }
-sub t_string  { 'string' }
-sub t_number  { 'number' }
-sub t_server  { 'server' }
-sub t_user    {  'user'  }
+sub t_boolean () {  'bool'  }
+sub t_string  () { 'string' }
+sub t_number  () { 'number' }
+sub t_server  () { 'server' }
+sub t_user    () {  'user'  }
 
 sub new {
     my ($class, %opts) = @_;

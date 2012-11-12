@@ -109,7 +109,7 @@ sub load_requirements {
     return unless $mod->{requires};
     return if ref $mod->{requires} ne 'ARRAY';
 
-    load_base($_) foreach @{$mod->{requires}};
+    load_base($_) or return foreach @{$mod->{requires}};
 
     return 1
 }
@@ -118,7 +118,7 @@ sub load_base {
     my $base = shift;
     return 1 if $INC{"API/Base/$base.pm"}; # already loaded
     log2("loading base '$base'");
-    require "$main::dir{lib}/API/Base/$base.pm" or log2("Could not load base $base") and return;
+    do "$main::dir{lib}/API/Base/$base.pm" or log2("Could not load base '$base'") and return;
     unshift @API::Module::ISA, "API::Base::$base";
     return 1;
 }
