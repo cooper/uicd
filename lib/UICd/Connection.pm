@@ -77,13 +77,14 @@ sub handle {
 
 # send a message.
 sub send {
-    my ($connection, $command, $parameters, $callback, $id) = @_;
+    my ($connection, $command, $parameters, $callback, $callback_params, $id) = @_;
     my $id = defined $connection->{messageID} ? ++$connection->{messageID} : ($connection->{messageID} = 0) if $callback;
     my $message = UIC::Parser::encode(
         command_name => $command,
         parameters   => $parameters,
         message_id   => $id
     ) or return;
+    $main::UICd->register_return_handler($id, $callback, $callback_params) if $callback;
     $connection->{stream}->write("$message\n");
 }
 

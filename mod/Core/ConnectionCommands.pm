@@ -49,12 +49,13 @@ sub init {
 # return command.
 sub handle_return {
     my ($param, $return, $info) = @_;
-    
+
     # useless if we don't have a message ID.
-    return unless $param->{messageID};
+    return unless defined $param->{messageID};
     
     # fire the return handlers.
     $main::UICd->fire_return($param->{messageID}, $param, $info);
+
 }
 
 ###########################
@@ -65,6 +66,9 @@ sub handle_return {
 # registers and authenticates a connection.
 sub handle_hello {
     my ($param, $return, $info) = @_;
+    
+    # XXX make sure not already registered.
+    # PS: don't force exit.
     
     # user registration.
     if ($param->{user}) {
@@ -80,7 +84,8 @@ sub handle_hello {
     $info->{connection}->send('registrationError', {
         message => 'attempted to register as neither a server not a user'
     });
-
+    
+    # XXX discard the connection.
     return;
 }
 
