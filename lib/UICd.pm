@@ -351,19 +351,7 @@ sub parse_data {
         $info->{connection} = $connection;
         $info->{raw_data}   = $data;
     };
-    
-    # it really doesn't make much sense for a return to have an identifier.
-    if ($result->{command_name} eq 'return' && defined $result->{message_id}) {
-        my $error = UIC::Parser::encode(command_name => 'logicError', parameters => {
-            message => 'return has illegal message identifier'
-        });
-        $connection->{stream}->write("$error\n");
         
-        # close the connection.
-        $uicd->close_connection($connection, "Syntax error");
-        return;
-    }
-    
     $uicd->fire_handler($result->{command_name}, $result->{parameters}, $sub);
     $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters}, $sub);
 }
