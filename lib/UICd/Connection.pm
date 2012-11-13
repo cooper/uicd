@@ -75,10 +75,21 @@ sub handle {
 
 }
 
+# send a message.
+sub send {
+    my ($connection, $command, $parameters, $callback, $id) = @_;
+    my $id = defined $connection->{messageID} ? ++$connection->{messageID} : ($connection->{messageID} = 0) if $callback;
+    my $message = UIC::Parser::encode(
+        command_name => $command,
+        parameters   => $parameters,
+        message_id   => $id
+    ) or return;
+    $connection->{stream}->write("$message\n");
+}
 
 sub DESTROY {
-    my $conn = shift;
-    log2("disposing of connection to $$conn{ip}");
+    my $connection = shift;
+    log2("disposing of connection to $$connection{ip}");
     exit;
 }
 

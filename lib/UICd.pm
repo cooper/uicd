@@ -32,7 +32,6 @@ sub begin {
         max_connection_count  => 0,
         max_global_user_count => 0,
         max_local_user_count  => 0
-        
     );
 }
 
@@ -347,7 +346,11 @@ sub parse_data {
         return;
     }
     
-    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters});
+    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters}, sub {
+        my $info = shift;
+        $info->{connection} = $connection;
+        $info->{raw_data}   = $data;
+    });
 }
 
 1

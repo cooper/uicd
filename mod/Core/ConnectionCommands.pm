@@ -38,7 +38,24 @@ sub init {
 # hello command.
 # registers and authenticates a connection.
 sub handle_hello {
+    my ($param, $return, $info) = @_;
+    
+    # user registration.
+    if ($param->{user}) {
+        return 1;
+    }
+    
+    # server registration.
+    elsif ($param->{server}) {
+        return 1;
+    }
+    
+    # neither a server nor a user. illegal alien.
+    $info->{connection}->send('registrationError', {
+        message => 'attempted to register as neither a server not a user'
+    });
 
+    return;
 }
 
 $mod
