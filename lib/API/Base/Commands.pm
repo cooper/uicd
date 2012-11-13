@@ -57,7 +57,7 @@ sub _register_handler {
 sub _unload {
     my ($class, $mod) = @_;
     log2("disposing of commands registered by uicd module '$$mod{name}'");
-    # delete_handler...
+    # XXX delete_handler...
     log2("done unloading commands");
     return 1
 }

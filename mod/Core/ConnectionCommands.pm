@@ -11,7 +11,7 @@ use UICd::Utils 'log2';
 our $mod = API::Module->new(
     name        => 'Core::ConnectionCommands',
     version     => '0.7',
-    description => 'the core set of pre-registration commands',
+    description => 'the core set of pre-registration and global commands',
     requires    => 'Commands',
     initialize  => \&init
 );
