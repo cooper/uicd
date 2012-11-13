@@ -6,9 +6,14 @@ use strict;
 
 use UICd::Utils 'log2';
 
+# registers a global command handler.
+sub register_global_command_handler {
+    return _register_handler('', shift, (caller)[0], @_);
+}
+
 # registers a connection command handler.
 sub register_connection_command_handler {
-    return _register_handler('connection', shift, (caller)[0], @_);
+    return _register_handler('connection.', shift, (caller)[0], @_);
 }
 
 # registers a handler of $type to $mod with %opts options.
@@ -27,7 +32,7 @@ sub _register_handler {
     # register the handler to UICd.
     # unlike in juno-ircd, the low-level API checks for validity of types.
     my $handlerID = $main::UICd->register_handler(
-        "$type.$opts{command}",
+        "$type$opts{command}",
         $opts{parameters},
         $opts{callback},
         $opts{priority} || 0,

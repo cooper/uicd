@@ -18,6 +18,13 @@ our $mod = API::Module->new(
 
 sub init {
 
+    $mod->register_global_command_handler(
+        command     => 'return',
+        description => 'handle message return values',
+        callback    => \&handle_return,
+        parameters  => 'all'
+    );
+
     $mod->register_connection_command_handler(
         command     => 'hello',
         description => 'register and authenticate a connection',
@@ -34,6 +41,25 @@ sub init {
     );
 
 }
+
+#######################
+### GLOBAL COMMANDS ###
+#######################
+
+# return command.
+sub handle_return {
+    my ($param, $return, $info) = @_;
+    
+    # useless if we don't have a message ID.
+    return unless $param->{messageID};
+    
+    # fire the return handlers.
+    $main::UICd->fire_return($param->{messageID}, $param, $info);
+}
+
+###########################
+### CONNECTION COMMANDS ###
+###########################
 
 # hello command.
 # registers and authenticates a connection.

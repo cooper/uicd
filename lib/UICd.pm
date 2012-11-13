@@ -346,11 +346,13 @@ sub parse_data {
         return;
     }
     
-    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters}, sub {
+    my $sub = sub {
         my $info = shift;
         $info->{connection} = $connection;
         $info->{raw_data}   = $data;
-    });
+    };
+    $uicd->fire_handler($result->{command_name}, $result->{parameters}, $sub);
+    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters}, $sub);
 }
 
 1
