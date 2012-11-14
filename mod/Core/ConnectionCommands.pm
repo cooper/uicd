@@ -39,7 +39,6 @@ sub init {
             server     => t_boolean
         }
     );
-
 }
 
 #######################

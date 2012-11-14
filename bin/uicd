@@ -16,7 +16,8 @@ our (
     $loop,              # the IO::Async loop
     %conf,              # the UICd configuration values
     $UICd,              # the UICd instance
-    @loaded_modules     # an array of loaded UICd modules
+    @loaded_modules,    # an array of loaded UICd modules
+    $server,            # this uicd's server object
 );
 
 sub reloadable (&&);

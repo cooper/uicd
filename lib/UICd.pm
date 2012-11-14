@@ -75,12 +75,6 @@ sub boot {
     # replace reloadable().
     *main::reloable = *reloadable;
     
-    # load API modules.
-    if ($conf->get('enable', 'API')) {
-        require API;
-        API::load_config();
-    }
-
     if (!$GV{started}) {
         start();
         become_daemon();
@@ -90,6 +84,20 @@ sub boot {
 
 # set up server. only called during initial start.
 sub start {
+
+    # create this server's object.
+    $main::server = $GV{server} = $main::UICd->new_server(
+        name         => $conf->get('server', 'name'),
+        network_name => $conf->get('server', 'network_name'),
+        id           => $conf->get('server', 'id'),
+        description  => $conf->get('server', 'description')
+    );
+        
+    # load API modules.
+    if ($conf->get('enable', 'API')) {
+        require API;
+        API::load_config();
+    }
 
     # create the sockets and begin listening.
     create_sockets();
@@ -316,7 +324,7 @@ sub parse_data {
     
     # if JSON/UJC support is enabled, load JSON if not already loaded
     # and attempt to parse the message as JSON.
-    my $json_error;
+    my ($json_error, $json_interpret_error);
     if (!$result && $conf->get('enable', 'JSON')) {
         require JSON if !$INC{'JSON'};
         
@@ -324,12 +332,13 @@ sub parse_data {
         $result = eval { my $j = JSON::decode_json($data); die "$@\n" if $@; $j };
         
         # figure the error if there is one.
-        $json_error = $@ if $@ ne $uic_error;
-        $json_error =~ s/\n//g if $json_error;
+        $json_error = $@ if $@ && $@ ne $uic_error;
         
         # convert to proper values.
         $result = UIC::Parser::decode_json($result) if $result;
-        
+        $json_interpret_error = $@ if $@ && $@ ne $json_error;
+
+        $json_error =~ s/\n//g if $json_error;
     }
     
     # unable to parse data - drop the connection.
@@ -337,7 +346,8 @@ sub parse_data {
 
         # forcibly send an error immediately.
         my $parameters = { uicError  => $uic_error };
-        $parameters->{jsonError} = $json_error if $json_error;
+        $parameters->{jsonError}          = $json_error           if $json_error;
+        $parameters->{jsonInterpretError} = $json_interpret_error if $json_interpret_error;
         my $error = UIC::Parser::encode(command_name => 'syntaxError', parameters => $parameters);
         $connection->{stream}->write("$error\n");
         
