@@ -228,6 +228,10 @@ sub handle_connect {
     );
 
     $main::loop->add($stream);
+    
+    # send the initial commands.
+    $conn->welcome;
+    
 }
 
 # handle incoming data.

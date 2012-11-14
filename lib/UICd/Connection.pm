@@ -9,7 +9,7 @@ use utf8;
 use feature 'switch';
 use parent 'UIC::EventedObject';
 
-use UICd::Utils qw(gv set log2 fatal);
+use UICd::Utils qw(gv set log2 fatal conf);
 
 # create a new connection.
 sub new {
@@ -73,6 +73,20 @@ sub handle {
     #return $connection->{type}->handle($data) if $connection->{ready};
 
 
+}
+
+# send initial messages.
+sub welcome {
+    my $connection = shift;
+    $connection->send('hello', {
+        network     => conf('server', 'network_name'),
+        id          => conf('server', 'id'),
+        name        => conf('server', 'name'),
+        description => conf('server', 'description'),
+        software    => gv('NAME'),
+        version     => gv('VERSION'),
+        server      => UIC::TRUE
+    });
 }
 
 # send a message.
