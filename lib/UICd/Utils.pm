@@ -44,8 +44,13 @@ sub log2 {
     return if !$main::NOFORK  && defined $main::PID;
     my $line = shift;
     my $sub = (caller 1)[3];
-    say(time.q( ).($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
+    my $level = '    ' x $UICd::GV{log_level} if $Utils::GV{indenting_logs};
+    say($level.($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
 }
+
+# increase/decrease logging level.
+sub increase_level { return unless $Utils::GV{indenting_logs}; $UICd::GV{log_level}++; say '' }
+sub decrease_level { return unless $Utils::GV{indenting_logs}; $UICd::GV{log_level}--; say '' }
 
 # log and exit. a third argument exits with no error.
 sub fatal {

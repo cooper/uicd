@@ -7,16 +7,20 @@ use strict;
 use utf8;
 use feature 'switch';
 
-use UICd::Utils qw(conf log2 gv set);
+use UICd::Utils qw(conf log2 gv set increase_level decrease_level);
 
 use Scalar::Util 'blessed';
 
 # load modules in the configuration.
 sub load_config {
     log2('Loading configuration modules');
+    increase_level();
+    
     foreach my $module ($UICd::conf->keys_of_block('modules')) {
         load_module($module);
     }
+    
+    decrease_level();
     log2('Done loading modules');
 }
 

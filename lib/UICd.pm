@@ -8,7 +8,7 @@ use warnings;
 use strict;
 use utf8;
 
-use UICd::Utils qw(log2 fatal gv set);
+use UICd::Utils qw(log2 fatal gv set increase_level decrease_level);
 
 our ($VERSION, @ISA, %GV, $conf) = 1;
 
@@ -31,7 +31,8 @@ sub begin {
         connection_count      => 0,
         max_connection_count  => 0,
         max_global_user_count => 0,
-        max_local_user_count  => 0
+        max_local_user_count  => 0,
+        log_level             => 0
     );
 }
 
@@ -39,6 +40,9 @@ sub begin {
 # keep in mind that this may be called more than once.
 sub boot {
 
+    log2('beginning boot');
+    increase_level();
+    
     # base requirements.
     require POSIX;
     
@@ -61,11 +65,16 @@ sub boot {
     unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
     
     # load the configuration. we can do this as many times as we please.
-    $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, "$main::dir{etc}/uicd.conf");
-    $conf->parse_config or die "Can't parse $main::dir{etc}/uicd.conf: $!\n";
+    my $file = "$main::dir{etc}/uicd.conf";
+    log2("loading uicd configuration $file");
+    $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, $file);
+    $conf->parse_config or die "Can't parse $file: $!\n";
     
     # create the main UICd object.
     if (!$main::UICd) {
+    
+        log2('creating libuic UIC manager');
+        increase_level();
         $main::UICd = $GV{UICd} = __PACKAGE__->new();
         
         # register the object fetchers.
@@ -73,32 +82,42 @@ sub boot {
         $main::UICd->register_object_type_handler('srv', \&get_server);
         $main::UICd->register_object_type_handler('chn', \&get_channel);
         
+        decrease_level();
+        log2('done creating UIC manager');
+        
     }
-    
-    # create the IO::Async loop.
-    $main::loop = IO::Async::Loop->new unless $main::loop;
     
     # replace reloadable().
     *main::reloable = *reloadable;
     
     if (!$GV{started}) {
         start();
-        become_daemon();
+        become_daemon() unless $GV{NOFORK};
         $GV{started} = 1;
     }
+    
+    decrease_level();
+    log2('boot complete');
 }
 
 # set up server. only called during initial start.
 sub start {
 
+    # create the IO::Async loop.
+    log2('creating IO::Async loop');
+    $main::loop = IO::Async::Loop->new unless $main::loop;
+
     # create this server's object.
+    log2('creating local server '.$conf->get('server', 'name'));
+    increase_level();
+    
     $main::server = $GV{server} = $main::UICd->new_server(
         name         => $conf->get('server', 'name'),
         network_name => $conf->get('server', 'network_name'),
         id           => $conf->get('server', 'id'),
         description  => $conf->get('server', 'description')
     );
-        
+     
     # load API modules.
     if ($conf->get('enable', 'API')) {
         require API;
@@ -107,11 +126,17 @@ sub start {
 
     # create the sockets and begin listening.
     create_sockets();
+
+    decrease_level();
+    log2('done starting server');
     
 }
 
 # create the sockets and begin listening. only called during initial start.
 sub create_sockets {
+    log2('opening sockets');
+    increase_level();
+    
     foreach my $addr ($conf->names_of_block('listen')) {
       foreach my $port (@{$conf->get(['listen', $addr], 'port')}) {
 
@@ -134,6 +159,9 @@ sub create_sockets {
 
         log2("Listening on [$addr]:$port");
     } }
+    
+    decrease_level();
+    log2('done opening sockets');
     return 1
 }
 
@@ -162,6 +190,7 @@ sub become_daemon {
 
 # begin the running loop.
 sub loop {
+    log2('starting IO::Async runtime, entering main loop');
     $main::loop->loop_forever;
 }
 
