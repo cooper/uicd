@@ -71,21 +71,27 @@ sub handle_hello {
     
     # user registration.
     if ($param->{user}) {
-        return 1;
+
     }
     
     # server registration.
     elsif ($param->{server}) {
-        return 1;
+
     }
     
-    # neither a server nor a user. illegal alien.
-    $info->{connection}->send('registrationError', {
-        message => 'attempted to register as neither a server not a user'
-    });
+    # neither a server not a user. illegal alien.
+    else {        
+        $info->{connection}->send('registrationError', {
+            message => 'attempted to register as neither a server not a user'
+        });
+        
+        # XXX discard the connection.
+        return;
+    }
     
-    # XXX discard the connection.
-    return;
+    # do other stuff after registering.
+    return 1;
+    
 }
 
 $mod

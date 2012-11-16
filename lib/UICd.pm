@@ -342,7 +342,9 @@ sub parse_data {
         $result = UIC::Parser::decode_json($result) if $result;
         $json_interpret_error = $@ if $@ && $@ ne $json_error;
 
+        # strip newlines.
         $json_error =~ s/\n//g if $json_error;
+        
     }
     
     # unable to parse data - drop the connection.
@@ -356,18 +358,25 @@ sub parse_data {
         $connection->{stream}->write("$error\n");
         
         # close the connection.
-        $uicd->close_connection($connection, "Syntax error");
+        $uicd->close_connection($connection, 'Syntax error');
         return;
     }
     
+    # the command handler $info sub.
     my $sub = sub {
         my $info = shift;
         $info->{connection} = $connection;
         $info->{raw_data}   = $data;
     };
-        
-    $uicd->fire_handler($result->{command_name}, $result->{parameters}, $sub);
-    $uicd->fire_handler('connection.'.$result->{command_name}, $result->{parameters}, $sub);
+    
+    # process the parameters.
+    my $params = $uicd->process_parameters($result->{parameters});
+    
+    # fire the handlers.
+    $uicd->fire_handler($result->{command_name}, $params, $sub);
+    $uicd->fire_handler('connection.'.$result->{command_name}, $params, $sub);
+    
+    return 1;
 }
 
 1
