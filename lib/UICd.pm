@@ -67,6 +67,12 @@ sub boot {
     # create the main UICd object.
     if (!$main::UICd) {
         $main::UICd = $GV{UICd} = __PACKAGE__->new();
+        
+        # register the object fetchers.
+        $main::UICd->register_object_type_handler('usr', \&get_user);
+        $main::UICd->register_object_type_handler('srv', \&get_server);
+        $main::UICd->register_object_type_handler('chn', \&get_channel);
+        
     }
     
     # create the IO::Async loop.
@@ -302,6 +308,22 @@ sub close_connection {
     log2("Closing connection from $$connection{ip}: $reason");
     $connection->done($reason, $silent);
     $uicd->remove_connection($connection);
+}
+
+###########################
+### UIC OBJECT FETCHING ###
+###########################
+
+sub get_user {
+
+}
+
+sub get_server {
+
+}
+
+sub get_channel {
+
 }
 
 #####################

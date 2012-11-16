@@ -1,4 +1,5 @@
 # Copyright (c) 2012, Mitchell Cooper
+# Core::ConnectionCommands: register connection commands, global commands, etc.
 package API::Module::Core::ConnectionCommands;
 
 use warnings;
