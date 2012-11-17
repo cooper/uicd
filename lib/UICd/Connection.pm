@@ -69,10 +69,6 @@ sub handle {
     # parse the line.
     $main::UICd->parse_data($data, $connection);
 
-    # if this peer is registered, forward the data to server or user
-    #return $connection->{type}->handle($data) if $connection->{ready};
-
-
 }
 
 # send initial messages.
@@ -80,7 +76,7 @@ sub welcome {
     my $connection = shift;
     $connection->send('hello', {
         network     => conf('server', 'network_name'),
-        id          => conf('server', 'id'),
+        id          => \conf('server', 'id'),
         name        => conf('server', 'name'),
         description => conf('server', 'description'),
         software    => gv('NAME'),
@@ -95,7 +91,7 @@ sub send {
     my $id = defined $connection->{messageID} ? ++$connection->{messageID} : ($connection->{messageID} = 0) if $callback;
     my $message = UIC::Parser::encode(
         command_name => $command,
-        parameters   => $parameters,
+        parameters   => $main::UICd->prepare_parameters_for_sending($parameters),
         message_id   => $id
     ) or return;
     $main::UICd->register_return_handler($id, $callback, $callback_params) if $callback;

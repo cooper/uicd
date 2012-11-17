@@ -45,7 +45,8 @@ sub log2 {
     my $line = shift;
     my $sub = (caller 1)[3];
     my $level = '    ' x $UICd::GV{log_level} if $Utils::GV{indenting_logs};
-    say($level.($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
+    $level ||= ' ';
+    say(time().$level.($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
 }
 
 # increase/decrease logging level.

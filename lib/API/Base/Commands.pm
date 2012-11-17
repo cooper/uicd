@@ -24,7 +24,7 @@ sub _register_handler {
     # make sure all required options are present.
     foreach my $what (qw|command description callback|) {
         next if exists $opts{$what};
-        $opts{name} ||= 'unknown';
+        $opts{command} ||= 'unknown';
         log2("command '$opts{command}' does not have '$what' option.");
         return
     }
