@@ -75,13 +75,9 @@ sub boot {
     
         log2('creating libuic UIC manager');
         increase_level();
+        
         $main::UICd = $UIC::main_uic = $GV{UICd} = __PACKAGE__->new();
-        
-        # register the object fetchers.
-        $main::UICd->register_object_type_handler('usr', \&get_user);
-        $main::UICd->register_object_type_handler('srv', \&get_server);
-        $main::UICd->register_object_type_handler('chn', \&get_channel);
-        
+     
         decrease_level();
         log2('done creating UIC manager');
         
