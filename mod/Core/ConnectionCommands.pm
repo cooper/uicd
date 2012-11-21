@@ -23,7 +23,8 @@ sub init {
         command     => 'return',
         description => 'handle message return values',
         callback    => \&handle_return,
-        parameters  => 'all'
+        parameters  => 'all',
+        priority    => 0
     );
 
     $mod->register_connection_command_handler(
@@ -38,7 +39,8 @@ sub init {
             uicVersion => t_number,
             user       => t_boolean,
             server     => t_boolean
-        }
+        },
+        priority => 0
     );
 }
 
@@ -67,12 +69,23 @@ sub handle_return {
 sub handle_hello {
     my ($param, $return, $info) = @_;
     
-    # XXX make sure not already registered.
+    # TODO: make sure not already registered.
     # PS: don't force exit.
+    print ref $param->{name},"\n";
+    $param->{name}      ->is_string and
+    $param->{software}  ->is_string and
+    $param->{version}   ->is_number and
+    $param->{nickname}  ->is_string or  return;
     
     # user registration.
     if ($param->{user}) {
-
+        $info->{new_user} = $main::UICd->new_user(
+            id       => $info->{server}->next_user_id,
+            name     => $param->{name},
+            software => $param->{software},
+            version  => $param->{version},
+            nickname => $param->{nickname}
+        );
     }
     
     # server registration.
@@ -85,8 +98,8 @@ sub handle_hello {
         $info->{connection}->send('registrationError', {
             message => 'attempted to register as neither a server not a user'
         });
-        
-        # XXX discard the connection.
+                
+        # TODO: discard the connection.
         return;
     }
     

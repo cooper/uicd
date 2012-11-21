@@ -35,7 +35,7 @@ sub _register_handler {
         "$type$opts{command}",
         $opts{parameters},
         $opts{callback},
-        $opts{priority} || 0,
+        defined $opts{priority} ? $opts{priority} : -100,
         $caller
     );
     

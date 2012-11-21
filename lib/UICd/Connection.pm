@@ -7,7 +7,7 @@ use warnings;
 use strict;
 use utf8;
 use feature 'switch';
-use parent 'UIC::EventedObject';
+use parent 'EventedObject';
 
 use UICd::Utils qw(gv set log2 fatal conf);
 

@@ -11,7 +11,7 @@ package UICd::Configuration;
 use warnings;
 use strict;
 use utf8;
-use parent 'UIC::EventedObject';
+use parent 'EventedObject';
 
 use UICd::Utils 'trim';
 

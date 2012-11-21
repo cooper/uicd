@@ -40,9 +40,10 @@ BEGIN {
     $dir{run} = "$run_dir/etc";
     $dir{mod} = "$run_dir/mod";
     $dir{libuic} = "$run_dir/libuic";
+    $dir{eventedobject} = "$run_dir/evented-object";
 
     chdir $run_dir or die "Can't access run directory.\n";
-    unshift @INC, $dir{lib}, $dir{libuic};
+    unshift @INC, $dir{lib}, $dir{libuic}, $dir{eventedobject};
 
     require UICd;
     UICd::begin();

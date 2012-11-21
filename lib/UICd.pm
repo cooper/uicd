@@ -72,7 +72,6 @@ sub boot {
     
     # create the main UICd object.
     if (!$main::UICd) {
-    
         log2('creating libuic UIC manager');
         increase_level();
         
@@ -80,7 +79,6 @@ sub boot {
      
         decrease_level();
         log2('done creating UIC manager');
-        
     }
     
     # replace reloadable().
@@ -382,30 +380,53 @@ sub parse_data {
     if (!$result) {
 
         # forcibly send an error immediately.
-        my $parameters = { uicError  => $uic_error };
-        $parameters->{jsonError}          = $json_error           if $json_error;
-        $parameters->{jsonInterpretError} = $json_interpret_error if $json_interpret_error;
+        my $parameters = { uicError  => UIC::Type::String->new($uic_error) };
+        $parameters->{jsonError}          = UIC::Type::String->new($json_error)           if $json_error;
+        $parameters->{jsonInterpretError} = UIC::Type::String->new($json_interpret_error) if $json_interpret_error;
         my $error = UIC::Parser::encode(command_name => 'syntaxError', parameters => $parameters);
         $connection->{stream}->write("$error\n");
         
         # close the connection.
         $uicd->close_connection($connection, 'Syntax error');
         return;
+
     }
     
     # the command handler $info sub.
     my $sub = sub {
         my $info = shift;
-        $info->{connection} = $connection;
-        $info->{raw_data}   = $data;
+        $info->{connection}   = $connection;
+        $info->{raw_data}     = $data;
+        $info->{message_id}   = $result->{message_id};
+        $info->{wants_return} = defined $result->{message_id};
+        $info->{server}       = gv('server');
     };
     
     # process the parameters.
     my $params = $uicd->process_parameters($result->{parameters});
     
-    # fire the handlers.
-    $uicd->fire_handler($result->{command_name}, $params, $sub);
-    $uicd->fire_handler('connection.'.$result->{command_name}, $params, $sub);
+    # fire the global handlers.
+    my $return = $uicd->fire_handler($result->{command_name}, $params, $sub);
+    
+    # if it returned nothing, try connection handlers.
+    if (!$return) {
+        $return = $uicd->fire_handler('connection.'.$result->{command_name}, $params, $sub);
+    }
+    
+    # there's always the possibility that the connection was terminated inside a handler.
+    return if $connection->{goodbye};
+    
+    # if we have a return value, send return command.
+    # we have to do this the hard way because of the message identifier.
+    # like connection->send, uses prepare_parameters_for_sending().
+    if ($return) {
+        my $reply = UIC::Parser::encode(
+            message_id   => $result->{message_id},
+            command_name => 'return',
+            parameters   => $main::UICd->prepare_parameters_for_sending($return)
+        );
+        $connection->{stream}->write("$reply\n");
+    }
     
     return 1;
 }
