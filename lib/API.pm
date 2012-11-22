@@ -40,11 +40,18 @@ sub load_module {
         return;
     }
 
-    # load the module
+    # load the module.
     log2("loading module '$name'");
     my $loc    = $name; $loc =~ s/::/\//g;
     my $file   = $main::dir{mod}.q(/).$loc.q(.pm);
-    my $module = do $file or log2("couldn't load $file: ".($! ? $! : $@)) and return;
+    my $module = do $file;
+    
+    # error in do().
+    if (!$module) {
+        log2("couldn't load $file: ".($! ? $! : $@));
+        class_unload("API::Module::${name}");
+        return;
+    }
 
     # make sure it returned an API::Module.
     if (!blessed($module) || !$module->isa('API::Module')) {
@@ -59,16 +66,21 @@ sub load_module {
     foreach my $mod (@main::loaded_modules) {
         next unless $mod->{package} eq $module->{package};
         log2("module '$$module{name}' appears to be loaded already.");
+        class_unload("API::Module::${name}");
         return;
     }
 
     # load the requirements if they are not already
-    load_requirements($module) or log2("$name: could not satisfy dependencies") and return;
+    load_requirements($module) or log2("$name: could not satisfy dependencies") and
+                                  class_unload("API::Module::${name}")          and
+                                  return;
 
     # initialize
     log2("$name: initializing module");
     eval { $module->{initialize}->() } or
-    log2($@ ? "module '$name' failed with error: $@" : "module '$name' refused to load") and return;
+    log2($@ ? "module '$name' failed with error: $@" : "module '$name' refused to load") and
+    class_unload("API::Module::${name}") and
+    return;
 
     log2("uicd module '$name' loaded successfully");
     push @main::loaded_modules, $module;
