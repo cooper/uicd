@@ -33,6 +33,7 @@ sub begin {
         max_global_user_count => 0,
         max_local_user_count  => 0,
         log_level             => 0
+        
     );
 }
 
@@ -245,6 +246,7 @@ sub signalpipe {
 
 # handle a warning.
 sub WARNING {
+    log2('[WARNING] '.shift());
 }
 
 ###########################
