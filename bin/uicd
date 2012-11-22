@@ -18,6 +18,7 @@ our (
     $UICd,              # the UICd instance
     @loaded_modules,    # an array of loaded UICd modules
     $server,            # this uicd's server object
+    $API,               # the API engine manager object
 );
 
 sub reloadable (&&);
@@ -41,7 +42,7 @@ BEGIN {
     $dir{mod} = "$run_dir/mod";
 
     chdir $run_dir or die "Can't access run directory.\n";
-    unshift @INC, $dir{lib}, "$dir{lib}/evented-object", "$dir{lib}/libuic";
+    unshift @INC, $dir{lib}, "$dir{lib}/evented-object", "$dir{lib}/libuic", "$dir{lib}/api-engine";
 
     require UICd;
     UICd::begin();

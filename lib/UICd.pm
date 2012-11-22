@@ -114,10 +114,27 @@ sub start {
         version      => gv('VERSION')
     );
      
-    # load API modules.
+    # load API and configuration modules.
     if ($conf->get('enable', 'API')) {
         require API;
-        API::load_config();
+        
+        # create the API manager.
+        $main::API = API->new(
+            log_sub  => sub { log2('[API] '.shift()) },
+            mod_dir  => $main::dir{mod},
+            base_dir => "$main::dir{lib}/API/Base"
+        );
+
+        log2('Loading configuration modules');
+        increase_level();
+        
+        foreach my $module ($conf->keys_of_block('modules')) {
+            $main::API->load_module($module);
+        }
+        
+        decrease_level();
+        log2('Done loading modules');
+        
     }
 
     # create the sockets and begin listening.
