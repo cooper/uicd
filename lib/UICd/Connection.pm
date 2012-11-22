@@ -88,14 +88,23 @@ sub welcome {
 # send a message.
 sub send {
     my ($connection, $command, $parameters, $callback, $callback_params, $id) = @_;
+    
+    # if a return callback was supplied, generate a message identifier.
     my $id = defined $connection->{messageID} ? ++$connection->{messageID} : ($connection->{messageID} = 0) if $callback;
+
+    # encode the message.
     my $message = UIC::Parser::encode(
         command_name => $command,
         parameters   => $main::UICd->prepare_parameters_for_sending($parameters),
         message_id   => $id
     ) or return;
+    
+    # register the return handler if there is one.
     $main::UICd->register_return_handler($id, $callback, $callback_params) if $callback;
+    
+    # write the message.
     $connection->{stream}->write("$message\n");
+    
 }
 
 sub DESTROY {

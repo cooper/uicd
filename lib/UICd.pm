@@ -104,12 +104,14 @@ sub start {
     # create this server's object.
     log2('creating local server '.$conf->get('server', 'name'));
     increase_level();
-    
+
     $main::server = $GV{server} = $main::UICd->new_server(
         name         => $conf->get('server', 'name'),
         network_name => $conf->get('server', 'network_name'),
         id           => $conf->get('server', 'id'),
-        description  => $conf->get('server', 'description')
+        description  => $conf->get('server', 'description'),
+        software     => gv('NAME'),
+        version      => gv('VERSION')
     );
      
     # load API modules.

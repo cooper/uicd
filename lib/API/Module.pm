@@ -21,7 +21,7 @@ sub import {
 }
 
 # constants.
-sub t_boolean () {  'bool'  }
+sub t_boolean () { 'boolean'}
 sub t_string  () { 'string' }
 sub t_number  () { 'number' }
 sub t_server  () { 'server' }

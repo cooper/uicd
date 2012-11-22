@@ -69,16 +69,18 @@ sub handle_return {
 sub handle_hello {
     my ($param, $return, $info) = @_;
     
-    # TODO: make sure not already registered.
+    # TODO: make sure not already registered. (connection command would not fire if so).
     # PS: don't force exit.
-    print ref $param->{name},"\n";
-    $param->{name}      ->is_string and
-    $param->{software}  ->is_string and
-    $param->{version}   ->is_number and
-    $param->{nickname}  ->is_string or  return;
-    
+
     # user registration.
     if ($param->{user}) {
+    
+        # make sure all require parameters are present.
+        if (!$param->has(qw|name software version nickname|)) {
+            # PARAMETER ERROR.
+            return;
+        }
+        
         $info->{new_user} = $main::UICd->new_user(
             id       => $info->{server}->next_user_id,
             name     => $param->{name},
@@ -94,7 +96,7 @@ sub handle_hello {
     }
     
     # neither a server not a user. illegal alien.
-    else {        
+    else {
         $info->{connection}->send('registrationError', {
             message => 'attempted to register as neither a server not a user'
         });
