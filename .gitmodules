@@ -1,6 +1,6 @@
-[submodule "libuic"]
-	path = libuic
+[submodule "lib/libuic"]
+	path = lib/libuic
 	url = git://github.com/cooper/libuic.git
-[submodule "evented-object"]
-	path = evented-object
+[submodule "lib/evented-object"]
+	path = lib/evented-object
 	url = git://github.com/cooper/evented-object.git
