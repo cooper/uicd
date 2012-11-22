@@ -55,11 +55,14 @@ sub boot {
 
     # libuic and UICd.
     require UIC;
-    require UICd::Configuration;
     require UICd::Connection;
     require UICd::Server;
     require UICd::User;
     require UICd::Channel;
+    
+    # Evented::Configuration.
+    require Evented::Configuration;
+    
     
     # become a child of UIC.
     unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
@@ -67,7 +70,7 @@ sub boot {
     # load the configuration. we can do this as many times as we please.
     my $file = "$main::dir{etc}/uicd.conf";
     log2("loading uicd configuration $file");
-    $conf = $GV{conf} = UICd::Configuration->new(\%main::conf, $file);
+    $conf = $GV{conf} = Evented::Configuration->new(\%main::conf, $file);
     $conf->parse_config or die "Can't parse $file: $!\n";
     
     # create the main UICd object.
