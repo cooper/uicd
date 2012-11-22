@@ -87,7 +87,7 @@ sub welcome {
 
 # send a message.
 sub send {
-    my ($connection, $command, $parameters, $callback, $callback_params, $id) = @_;
+    my ($connection, $command, $parameters, $callback, $callback_params) = @_;
     
     # if a return callback was supplied, generate a message identifier.
     my $id = defined $connection->{messageID} ? ++$connection->{messageID} : ($connection->{messageID} = 0) if $callback;
