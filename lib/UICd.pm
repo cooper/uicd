@@ -120,10 +120,19 @@ sub start {
     # load API and configuration modules.
     if ($conf->get('enable', 'API')) {
         require API;
+                
+        # API::Module constants.
+        sub API::Module::t_boolean () { 'boolean'}
+        sub API::Module::t_string  () { 'string' }
+        sub API::Module::t_number  () { 'number' }
+        sub API::Module::t_server  () { 'server' }
+        sub API::Module::t_user    () {  'user'  }
+        
+        @API::Module::EXPORT = qw(t_boolean t_string t_number t_server t_user);
         
         # create the API manager.
         $main::API = API->new(
-            log_sub  => sub { log2('[API] '.shift()) },
+            log_sub  => \&api_log,
             mod_dir  => $main::dir{mod},
             base_dir => "$main::dir{lib}/API/Base"
         );
@@ -451,6 +460,14 @@ sub parse_data {
     }
     
     return 1;
+}
+
+#####################
+### MISCELLANEOUS ###
+#####################
+
+sub api_log {
+    log2('[API] '.shift());
 }
 
 1
