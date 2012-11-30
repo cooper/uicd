@@ -21,9 +21,10 @@ our (
     @loaded_modules,    # an array of loaded UICd modules
     $server,            # this uicd's server object
     $API,               # the API engine manager object
+    @reloadable,        # an array of reloadable packages
 );
 
-sub reloadable (&&);
+sub reloadable;
 
 BEGIN {
 

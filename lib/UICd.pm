@@ -171,16 +171,84 @@ sub start {
     $main::conf->parse_config or die "Can't parse $file: $!\n";
     
     # replace reloadable().
-    *main::reloable = *reloadable;
+    *main::reloadable = *reloadable;
     
     # become a daemon
     become_daemon() unless $main::GV{NOFORK};
     
+    # register package as reloadable.
+    main::reloadable(
+        before => sub { *main::TEMP_LOG = *log2 },
+        after  => sub { undef *main::TEMP_LOG }
+    );
+    
     decrease_level();
-    log2('seteup complete');
+    log2('setup complete');
 }
 
+# do the reloading. it is dangerous to call any external subroutines from here,
+# as it may be reloading this package itself.
+sub RELOAD {
+    log2('RELOADING UICd!');
+    my $starttime = time;
+    foreach my $pkg (@main::reloadable) {
+    
+        # before callback.
+        $pkg->{before}() if $pkg->{before};
+        
+        # this must be called here, as it is defined in before callback.
+        main::TEMP_LOG("reloading package '$$pkg{name}'");
+        
+        # unload it. from Class::Unload on CPAN. Copyright (c) 2011, Dagfinn Ilmari MannsÃ¥ker.
+        my $class = $pkg->{name};
+        my $inc_file = join( '/', split /(?:'|::)/, $class ) . '.pm';
+        (sub {
+            no strict 'refs';
+
+            # flush inheritance caches
+            @{$class . '::ISA'} = ();
+
+            my $symtab = $class.'::';
+            # delete all symbols except other namespaces
+            for my $symbol (keys %$symtab) {
+                next if $symbol =~ /\A[^:]+::\z/;
+                delete $symtab->{$symbol};
+            }
+
+            delete $INC{ $inc_file };
+            
+            use strict 'refs';
+        })->();
+        
+        
+        # during callback.
+        $pkg->{during}() if $pkg->{during};
+        
+        # load it.
+        require $inc_file;
+        
+        # this must be called here, as it is undefined in after callback.
+        main::TEMP_LOG("package '$$pkg{name}' reloaded successfully");
+        
+        # call after.
+        $pkg->{after}() if $pkg->{after};
+        
+    }
+    my $finishtime = time;
+    my $diff = $finishtime - $starttime;
+    log2('finished reloading UICd in '.(!$diff ? 'less than one second' : $diff.' second'.($diff == 1 ? '' : 's')));
+}
+
+# main::reloadable(
+#     before  => sub { ... }, # called before unloaded
+#     during  => sub { ... }, # called after unloaded, before loaded
+#     after   => sub { ... }, # called after loaded
+# );
 sub reloadable {
+    my $package = caller;
+    my %opts    = @_;
+    $opts{name} = $package;
+    push @main::reloadable, \%opts;
 }
 
 #######################
@@ -260,6 +328,9 @@ sub terminate {
 
 # handle a HUP.
 sub signalhup {
+    log2('handling HUP');
+    RELOAD();
+    start();
 }
 
 # handle a PIPE.
