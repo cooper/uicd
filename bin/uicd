@@ -11,10 +11,12 @@ local ($SIG{HUP},         $SIG{__WARN__}                               ) =
       (\&UICd::signalhup, \&UICd::WARNING                              );
 
 our (
+    %GV,                # the global variable hash
     $run_dir,           # the UICd running directory
     %dir,               # a hash of data directories
     $loop,              # the IO::Async loop
     %conf,              # the UICd configuration values
+    $conf,              # the actual UICd configuration object
     $UICd,              # the UICd instance
     @loaded_modules,    # an array of loaded UICd modules
     $server,            # this uicd's server object

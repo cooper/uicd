@@ -19,16 +19,16 @@ sub gv {
     # can't use do{given{ ... }}
     # compatibility with 5.12 XXX
     given (scalar @_) {
-        when (1) { return $UICd::GV{+shift}                 }
-        when (2) { return $UICd::GV{+shift}{+shift}         }
-        when (3) { return $UICd::GV{+shift}{+shift}{+shift} }
+        when (1) { return $main::GV{+shift}                 }
+        when (2) { return $main::GV{+shift}{+shift}         }
+        when (3) { return $main::GV{+shift}{+shift}{+shift} }
     }
     return;
 }
 
 # GV set
 sub set ($$) {
-    $UICd::GV{+shift} = shift;
+    $main::GV{+shift} = shift;
 }
 
 # remove leading and trailing whitespace.
@@ -44,14 +44,14 @@ sub log2 {
     return if !$main::NOFORK  && defined $main::PID;
     my $line = shift;
     my $sub = (caller 1)[3];
-    my $level = '    ' x $UICd::GV{log_level} if $Utils::GV{indenting_logs};
+    my $level = '    ' x $main::GV{log_level} if $Utils::GV{indenting_logs};
     $level ||= ' ';
     say(time().$level.($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$line);
 }
 
 # increase/decrease logging level.
-sub increase_level { return unless $Utils::GV{indenting_logs}; $UICd::GV{log_level}++; say '' }
-sub decrease_level { return unless $Utils::GV{indenting_logs}; $UICd::GV{log_level}--; say '' }
+sub increase_level { return unless $Utils::GV{indenting_logs}; $main::GV{log_level}++; say '' }
+sub decrease_level { return unless $Utils::GV{indenting_logs}; $main::GV{log_level}--; say '' }
 
 # log and exit. a third argument exits with no error.
 sub fatal {
@@ -63,7 +63,7 @@ sub fatal {
 
 # alias to $conf->get
 sub conf {
-    return $UICd::conf->get(@_);
+    return $main::conf->get(@_);
 }
 
 1

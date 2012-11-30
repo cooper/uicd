@@ -10,7 +10,7 @@ use utf8;
 
 use UICd::Utils qw(log2 fatal gv set increase_level decrease_level);
 
-our ($VERSION, @ISA, %GV, $conf) = 1;
+our ($VERSION, @ISA) = 1;
 
 ##############################
 ### CALLED BY MAIN PACKAGE ###
@@ -18,7 +18,7 @@ our ($VERSION, @ISA, %GV, $conf) = 1;
 
 # BEGIN block.
 sub begin {
-    %GV = (
+    %main::GV = (
     
         # software-related variables.
         NAME    => 'uicd',
@@ -71,15 +71,15 @@ sub boot {
     # load the configuration. we can do this as many times as we please.
     my $file = "$main::dir{etc}/uicd.conf";
     log2("loading uicd configuration $file");
-    $conf = $GV{conf} = Evented::Configuration->new(\%main::conf, $file);
-    $conf->parse_config or die "Can't parse $file: $!\n";
+    $main::conf = $main::GV{conf} = Evented::Configuration->new(\%main::conf, $file);
+    $main::conf->parse_config or die "Can't parse $file: $!\n";
     
     # create the main UICd object.
     if (!$main::UICd) {
         log2('creating libuic UIC manager');
         increase_level();
         
-        $main::UICd = $UIC::main_uic = $GV{UICd} = __PACKAGE__->new();
+        $main::UICd = $UIC::main_uic = $main::GV{UICd} = __PACKAGE__->new();
      
         decrease_level();
         log2('done creating UIC manager');
@@ -88,10 +88,10 @@ sub boot {
     # replace reloadable().
     *main::reloable = *reloadable;
     
-    if (!$GV{started}) {
+    if (!$main::GV{started}) {
         start();
-        become_daemon() unless $GV{NOFORK};
-        $GV{started} = 1;
+        become_daemon() unless $main::GV{NOFORK};
+        $main::GV{started} = 1;
     }
     
     decrease_level();
@@ -106,20 +106,20 @@ sub start {
     $main::loop = IO::Async::Loop->new unless $main::loop;
 
     # create this server's object.
-    log2('creating local server '.$conf->get('server', 'name'));
+    log2('creating local server '.$main::conf->get('server', 'name'));
     increase_level();
 
-    $main::server = $GV{server} = $main::UICd->new_server(
-        name         => $conf->get('server', 'name'),
-        network_name => $conf->get('server', 'network_name'),
-        id           => $conf->get('server', 'id'),
-        description  => $conf->get('server', 'description'),
+    $main::server = $main::GV{server} = $main::UICd->new_server(
+        name         => $main::conf->get('server', 'name'),
+        network_name => $main::conf->get('server', 'network_name'),
+        id           => $main::conf->get('server', 'id'),
+        description  => $main::conf->get('server', 'description'),
         software     => gv('NAME'),
         version      => gv('VERSION')
     );
      
     # load API and configuration modules.
-    if ($conf->get('enable', 'API')) {
+    if ($main::conf->get('enable', 'API')) {
         require API;
                 
         # API::Module constants.
@@ -141,7 +141,7 @@ sub start {
         log2('Loading configuration modules');
         increase_level();
         
-        foreach my $module ($conf->keys_of_block('modules')) {
+        foreach my $module ($main::conf->keys_of_block('modules')) {
             $main::API->load_module($module);
         }
         
@@ -163,8 +163,8 @@ sub create_sockets {
     log2('opening sockets');
     increase_level();
     
-    foreach my $addr ($conf->names_of_block('listen')) {
-      foreach my $port (@{$conf->get(['listen', $addr], 'port')}) {
+    foreach my $addr ($main::conf->names_of_block('listen')) {
+      foreach my $port (@{$main::conf->get(['listen', $addr], 'port')}) {
 
         # create the loop listener
         my $listener = IO::Async::Listener->new(on_stream => \&handle_connect);
@@ -195,7 +195,7 @@ sub create_sockets {
 sub become_daemon {
 
     # unless NOFORK enabled, fork.
-    if (!$GV{NOFORK}) {
+    if (!$main::GV{NOFORK}) {
 
         # since there will be no input or output from here on,
         # open the filehandles to /dev/null
@@ -204,13 +204,13 @@ sub become_daemon {
         open STDERR, '>', '/dev/null' or die;
 
         # write the PID file that is used by the start/stop/rehash script.
-        open my $pidfh, '>', "$main::dir{run}/$GV{NAME}.pid" or die;
-        $GV{PID} = fork;
-        say $pidfh $GV{PID} if $GV{PID};
+        open my $pidfh, '>', "$main::dir{run}/$main::GV{NAME}.pid" or die;
+        $main::GV{PID} = fork;
+        say $pidfh $main::GV{PID} if $main::GV{PID};
         close $pidfh;
     }
 
-    exit if $GV{PID};
+    exit if $main::GV{PID};
     POSIX::setsid();
 }
 
@@ -258,14 +258,14 @@ sub handle_connect {
     my ($listener, $stream) = @_;
 
     # if the connection limit has been reached, drop the connection.
-    if ($main::UICd->number_of_connections >= $conf->get('limit', 'total_local_connections')) {
+    if ($main::UICd->number_of_connections >= $main::conf->get('limit', 'total_local_connections')) {
         $stream->close_now;
         return;
     }
 
     # if the connection IP limit has been reached, drop the connection.
     my $ip = $stream->{write_handle}->peerhost;
-    if (scalar(grep { $_->{ip} eq $ip } $main::UICd->connections) >= $conf->get('limit', 'local_connections_per_ip')) {
+    if (scalar(grep { $_->{ip} eq $ip } $main::UICd->connections) >= $main::conf->get('limit', 'local_connections_per_ip')) {
         $stream->close_now;
         return;
     }
@@ -391,7 +391,7 @@ sub parse_data {
     # if JSON/UJC support is enabled, load JSON if not already loaded
     # and attempt to parse the message as JSON.
     my ($json_error, $json_interpret_error);
-    if (!$result && $conf->get('enable', 'JSON')) {
+    if (!$result && $main::conf->get('enable', 'JSON')) {
         require JSON if !$INC{'JSON'};
         
         # attempt to parse the JSON. must be wrapped in eval to catch errors.
@@ -413,18 +413,16 @@ sub parse_data {
     if (!$result) {
 
         # forcibly send an error immediately.
-        my $parameters = { uicError  => UIC::Type::String->new($uic_error) };
-        $parameters->{jsonError}          = UIC::Type::String->new($json_error)           if $json_error;
-        $parameters->{jsonInterpretError} = UIC::Type::String->new($json_interpret_error) if $json_interpret_error;
-        my $error = UIC::Parser::encode(command_name => 'syntaxError', parameters => $parameters);
-        $connection->{stream}->write("$error\n");
-        
+        my $parameters                    = { uicError => $uic_error };
+        $parameters->{jsonError}          = $json_error           if $json_error;
+        $parameters->{jsonInterpretError} = $json_interpret_error if $json_interpret_error;
+        $connection->send('syntaxError', $parameters);
         # close the connection.
         $uicd->close_connection($connection, 'Syntax error');
         return;
-
+        
     }
-    
+     
     # the command handler $info sub.
     my $sub = sub {
         my $info = shift;
