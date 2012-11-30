@@ -87,11 +87,11 @@ sub boot {
         require API;
                 
         # API::Module constants.
-        sub API::Module::t_boolean () { 'boolean'}
-        sub API::Module::t_string  () { 'string' }
-        sub API::Module::t_number  () { 'number' }
-        sub API::Module::t_server  () { 'server' }
-        sub API::Module::t_user    () {  'user'  }
+        *API::Module::t_boolean = sub { 'boolean'};
+        *API::Module::t_string  = sub { 'string' };
+        *API::Module::t_number  = sub { 'number' };
+        *API::Module::t_server  = sub { 'server' };
+        *API::Module::t_user    = sub {  'user'  };
         
         @API::Module::EXPORT = qw(t_boolean t_string t_number t_server t_user);
         
@@ -156,7 +156,7 @@ sub start {
     
     
     # become a child of UIC.
-    unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
+    unshift @ISA, 'UIC';
     
     # set default global variables if they are not already present.
     foreach my $var (keys %lGV) {
@@ -189,22 +189,25 @@ sub start {
 # do the reloading. it is dangerous to call any external subroutines from here,
 # as it may be reloading this package itself.
 sub RELOAD {
+    no warnings 'redefine';
     log2('RELOADING UICd!');
     my $starttime = time;
-    foreach my $pkg (@main::reloadable) {
     
+    foreach my $pkg (@main::reloadable) {
+        my $class    = $pkg->{name};
+        my $inc_file = join( '/', split /(?:'|::)/, $class ) . '.pm';
+        
         # before callback.
+        my $before_version = $class->VERSION;
         $pkg->{before}() if $pkg->{before};
         
         # this must be called here, as it is defined in before callback.
         main::TEMP_LOG("reloading package '$$pkg{name}'");
         
         # unload it. from Class::Unload on CPAN. Copyright (c) 2011, Dagfinn Ilmari MannsÃ¥ker.
-        my $class = $pkg->{name};
-        my $inc_file = join( '/', split /(?:'|::)/, $class ) . '.pm';
         (sub {
             no strict 'refs';
-
+            
             # flush inheritance caches
             @{$class . '::ISA'} = ();
 
@@ -225,13 +228,16 @@ sub RELOAD {
         $pkg->{during}() if $pkg->{during};
         
         # load it.
-        require $inc_file;
+        do $inc_file or return;
         
         # this must be called here, as it is undefined in after callback.
         main::TEMP_LOG("package '$$pkg{name}' reloaded successfully");
         
         # call after.
+        my $after_version = $class->VERSION;
         $pkg->{after}() if $pkg->{after};
+        
+        log2("$class upgrade: $before_version -> $after_version");
         
     }
     my $finishtime = time;
@@ -330,7 +336,7 @@ sub terminate {
 sub signalhup {
     log2('handling HUP');
     RELOAD();
-    start();
+    UICd->can('start')->();
 }
 
 # handle a PIPE.
