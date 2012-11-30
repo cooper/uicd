@@ -12,98 +12,56 @@ use UICd::Utils qw(log2 fatal gv set increase_level decrease_level);
 
 our ($VERSION, @ISA) = 1;
 
+# the values %lGV are used as defaults if any of
+# the keys do not exist when UICd.pm is loaded
+my %lGV = (
+    
+    # software-related variables.
+    NAME    => 'uicd',
+    VERSION => $VERSION,
+    PROTO   => 1,
+    START   => time,
+    NOFORK  => 'NOFORK' ~~ @ARGV,
+    
+    # variables that need to be set to a zero value.
+    connection_count      => 0,
+    max_connection_count  => 0,
+    max_global_user_count => 0,
+    max_local_user_count  => 0,
+    log_level             => 0
+    
+);
+
 ##############################
 ### CALLED BY MAIN PACKAGE ###
 ##############################
 
 # BEGIN block.
 sub begin {
-    %main::GV = (
-    
-        # software-related variables.
-        NAME    => 'uicd',
-        VERSION => $VERSION,
-        PROTO   => 1,
-        START   => time,
-        NOFORK  => 'NOFORK' ~~ @ARGV,
-        
-        # variables that need to be set to a zero value.
-        connection_count      => 0,
-        max_connection_count  => 0,
-        max_global_user_count => 0,
-        max_local_user_count  => 0,
-        log_level             => 0
-        
-    );
+    %main::GV = %lGV;
 }
 
-# load requirements and set up the loop.
-# keep in mind that this may be called more than once.
+# boot server. only called during initial start.
 sub boot {
 
-    log2('beginning boot');
+    log2('booting server');
     increase_level();
     
-    # base requirements.
-    require POSIX;
-    
-    # IO::Async and friends.
-    require IO::Async::Loop;
-    require IO::Async::Listener;
-    require IO::Async::Timer::Periodic;
-    require IO::Async::Stream;
-    require IO::Socket::IP;
-
-    # libuic and UICd.
-    require UIC;
-    require UICd::Connection;
-    require UICd::Server;
-    require UICd::User;
-    require UICd::Channel;
-    
-    # Evented::Configuration.
-    require Evented::Configuration;
-    
-    
-    # become a child of UIC.
-    unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
-    
-    # load the configuration. we can do this as many times as we please.
-    my $file = "$main::dir{etc}/uicd.conf";
-    log2("loading uicd configuration $file");
-    $main::conf = $main::GV{conf} = Evented::Configuration->new(\%main::conf, $file);
-    $main::conf->parse_config or die "Can't parse $file: $!\n";
-    
-    # create the main UICd object.
-    if (!$main::UICd) {
-        log2('creating libuic UIC manager');
-        increase_level();
-        
-        $main::UICd = $UIC::main_uic = $main::GV{UICd} = __PACKAGE__->new();
-     
-        decrease_level();
-        log2('done creating UIC manager');
-    }
-    
-    # replace reloadable().
-    *main::reloable = *reloadable;
-    
-    if (!$main::GV{started}) {
-        start();
-        become_daemon() unless $main::GV{NOFORK};
-        $main::GV{started} = 1;
-    }
-    
-    decrease_level();
-    log2('boot complete');
-}
-
-# set up server. only called during initial start.
-sub start {
+    # set up UICd.
+    start();
 
     # create the IO::Async loop.
     log2('creating IO::Async loop');
     $main::loop = IO::Async::Loop->new unless $main::loop;
+
+    # create the main UICd object.
+    log2('creating libuic UIC manager');
+    increase_level();
+    
+    $main::UICd = $UIC::main_uic = $main::GV{UICd} = __PACKAGE__->new();
+ 
+    decrease_level();
+    log2('done creating UIC manager');
 
     # create this server's object.
     log2('creating local server '.$main::conf->get('server', 'name'));
@@ -117,6 +75,9 @@ sub start {
         software     => gv('NAME'),
         version      => gv('VERSION')
     );
+    
+    decrease_level();
+    log2('done creating server');
      
     # load API and configuration modules.
     if ($main::conf->get('enable', 'API')) {
@@ -154,8 +115,56 @@ sub start {
     create_sockets();
 
     decrease_level();
-    log2('done starting server');
+    log2('done booting server');
     
+}
+
+# loads up everything needed for UICd. called in boot(), as it loads dependencies.
+# keep in mind that this may be called more than once.
+# unlike boot(), it is called after UICd.pm is loaded, even if it was reloaded.
+sub start {
+
+    log2('setting up UICd');
+    increase_level();
+    
+    # base requirements.
+    require POSIX;
+    
+    # IO::Async and friends.
+    require IO::Async::Loop;
+    require IO::Async::Listener;
+    require IO::Async::Timer::Periodic;
+    require IO::Async::Stream;
+    require IO::Socket::IP;
+
+    # libuic and UICd.
+    require UIC;
+    require UICd::Connection;
+    require UICd::Server;
+    require UICd::User;
+    require UICd::Channel;
+    
+    # Evented::Configuration.
+    require Evented::Configuration;
+    
+    
+    # become a child of UIC.
+    unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
+    
+    # load the configuration. we can do this as many times as we please.
+    my $file = "$main::dir{etc}/uicd.conf";
+    log2("loading uicd configuration $file");
+    $main::conf = $main::GV{conf} = Evented::Configuration->new(\%main::conf, $file);
+    $main::conf->parse_config or die "Can't parse $file: $!\n";
+    
+    # replace reloadable().
+    *main::reloable = *reloadable;
+    
+    # become a daemon
+    become_daemon() unless $main::GV{NOFORK};
+    
+    decrease_level();
+    log2('seteup complete');
 }
 
 # create the sockets and begin listening. only called during initial start.
