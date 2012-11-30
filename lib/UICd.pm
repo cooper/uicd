@@ -13,7 +13,10 @@ use UICd::Utils qw(log2 fatal gv set increase_level decrease_level);
 our ($VERSION, @ISA) = 1;
 
 # the values %lGV are used as defaults if any of
-# the keys do not exist when UICd.pm is loaded
+# the keys do not exist when UICd.pm is loaded.
+#
+# it is safe to extend this from version to version, as start()
+# ensures that each of these values are present after UICd.pm is loaded.
 my %lGV = (
     
     # software-related variables.
@@ -119,6 +122,10 @@ sub boot {
     
 }
 
+############################
+### STARTING & RELOADING ###
+############################
+
 # loads up everything needed for UICd. called in boot(), as it loads dependencies.
 # keep in mind that this may be called more than once.
 # unlike boot(), it is called after UICd.pm is loaded, even if it was reloaded.
@@ -151,6 +158,12 @@ sub start {
     # become a child of UIC.
     unshift @ISA, 'UIC' unless 'UIC' ~~ @ISA;
     
+    # set default global variables if they are not already present.
+    foreach my $var (keys %lGV) {
+        next if exists $main::GV{$var};
+        $main::GV{$var} = $lGV{$var};
+    }
+    
     # load the configuration. we can do this as many times as we please.
     my $file = "$main::dir{etc}/uicd.conf";
     log2("loading uicd configuration $file");
@@ -166,6 +179,13 @@ sub start {
     decrease_level();
     log2('seteup complete');
 }
+
+sub reloadable {
+}
+
+#######################
+### SETTING UP UICD ###
+#######################
 
 # create the sockets and begin listening. only called during initial start.
 sub create_sockets {
@@ -227,13 +247,6 @@ sub become_daemon {
 sub loop {
     log2('starting IO::Async runtime, entering main loop');
     $main::loop->loop_forever;
-}
-
-##########################
-### PACKAGE MANAGEMENT ###
-##########################
-
-sub reloadable {
 }
 
 ########################
