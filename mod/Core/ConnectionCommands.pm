@@ -23,7 +23,7 @@ sub init {
         command     => 'return',
         description => 'handle message return values',
         callback    => \&handle_return,
-        parameters  => 'all',
+        parameters  => {},
         priority    => 0
     );
 
@@ -42,6 +42,7 @@ sub init {
         },
         priority => 0
     );
+    
 }
 
 #######################

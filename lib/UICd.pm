@@ -61,7 +61,11 @@ sub boot {
     log2('creating libuic UIC manager');
     increase_level();
     
-    $main::UICd = $UIC::main_uic = $main::GV{UICd} = __PACKAGE__->new();
+    my $uicd = $main::UICd = $UIC::main_uic = $main::GV{UICd} = __PACKAGE__->new();
+    
+    # replace the libuic parser with UICd's.
+    $uicd->delete_parse_handler('libuicUICClientParser');
+    $uicd->register_parse_handler('UICdUICConnectionParser', \&_uic_parser);
  
     decrease_level();
     log2('done creating UIC manager');
@@ -469,6 +473,14 @@ sub close_connection {
 ### UIC OVERRIDES ###
 #####################
 
+# overrides parse_data().
+sub parse_data {
+    my ($uicd, $data, $connection) = @_;
+    # TODO: use the assumed syntax type of the connection.
+    #$uicd->{preferred_parser} = $connection->{parser}
+    return $uicd->SUPER::parse_data($data, $connection);
+}
+
 # logging.
 # this overrides UIC::log().
 sub log {
@@ -477,44 +489,24 @@ sub log {
     log2("[libuic] ".($sub && $sub ne '(eval)' ? "$sub():" : q([).(caller)[0].q(])).q( ).$message);
 }
 
-# parse a line of data.
-# this overrides UIC::parse_data().
-sub parse_data {
-    my ($uicd, $data, $connection) = @_;
-    log2("parsing data: $data");
+#######################
+### PARSER HANDLERS ###
+#######################
+
+# the UIC parser handler.
+sub _uic_parser {
+    my ($uicd, $data, $errors, $connection) = @_;
+    log2("parsing data: $data"); # XXX
     
     # first attempt to parse data as UIC.
     my $result    = UIC::Parser::parse_line($data);
-    my $uic_error = $@;
-    
-    # if JSON/UJC support is enabled, load JSON if not already loaded
-    # and attempt to parse the message as JSON.
-    my ($json_error, $json_interpret_error);
-    if (!$result && $main::conf->get('enable', 'JSON')) {
-        require JSON if !$INC{'JSON'};
-        
-        # attempt to parse the JSON. must be wrapped in eval to catch errors.
-        $result = eval { my $j = JSON::decode_json($data); die "$@\n" if $@; $j };
-        
-        # figure the error if there is one.
-        $json_error = $@ if $@ && $@ ne $uic_error;
-        
-        # convert to proper values.
-        $result = UIC::Parser::decode_json($result) if $result;
-        $json_interpret_error = $@ if $@ && $@ ne $json_error;
 
-        # strip newlines.
-        $json_error =~ s/\n//g if $json_error;
-        
-    }
     
     # unable to parse data - drop the connection.
     if (!$result) {
 
         # forcibly send an error immediately.
-        my $parameters                    = { uicError => $uic_error };
-        $parameters->{jsonError}          = $json_error           if $json_error;
-        $parameters->{jsonInterpretError} = $json_interpret_error if $json_interpret_error;
+        my $parameters                    = { uicError => $@ };
         $connection->send('syntaxError', $parameters);
         # close the connection.
         $uicd->close_connection($connection, 'Syntax error');
