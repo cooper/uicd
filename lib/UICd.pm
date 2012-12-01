@@ -498,20 +498,14 @@ sub _uic_parser {
     my ($uicd, $data, $errors, $connection) = @_;
     log2("parsing data: $data"); # XXX
     
-    # first attempt to parse data as UIC.
-    my $result    = UIC::Parser::parse_line($data);
+    # attempt to parse data as UIC.
+    my $result = UIC::Parser::parse_line($data);
 
     
     # unable to parse data - drop the connection.
     if (!$result) {
-
-        # forcibly send an error immediately.
-        my $parameters                    = { uicError => $@ };
-        $connection->send('syntaxError', $parameters);
-        # close the connection.
-        $uicd->close_connection($connection, 'Syntax error');
+        $errors->{uicError} = $@;
         return;
-        
     }
      
     # the command handler $info sub.

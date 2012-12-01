@@ -67,7 +67,15 @@ sub handle {
     return if $connection->{goodbye};
 
     # parse the line.
-    $main::UICd->parse_data($data, $connection);
+    if (my $errors = $main::UICd->parse_data($data, $connection)) {
+    
+        # forcibly send an error immediately.
+        $connection->send('syntaxError', $errors);
+        
+        # close the connection.
+        $main::UICd->close_connection($connection, 'Syntax error');
+        
+    }
 
 }
 
