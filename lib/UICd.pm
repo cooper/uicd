@@ -495,7 +495,8 @@ sub log {
 
 # the UIC parser handler.
 sub _uic_parser {
-    my ($uicd, $data, $errors, $connection) = @_;
+    my ($event, $data, $errors, $connection) = @_;
+    my $uicd = $event->{object};
     log2("parsing data: $data"); # XXX
     
     # attempt to parse data as UIC.
