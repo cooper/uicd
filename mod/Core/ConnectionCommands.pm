@@ -25,7 +25,7 @@ sub init {
         callback    => \&handle_return,
         parameters  => {},
         priority    => 0
-    );
+    ) or return;
 
     $mod->register_connection_command_handler(
         command     => 'hello',
@@ -41,8 +41,9 @@ sub init {
             server     => t_boolean
         },
         priority => 0
-    );
-    
+    ) or return;
+
+    return 1;   
 }
 
 #######################
